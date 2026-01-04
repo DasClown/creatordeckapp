@@ -104,10 +104,14 @@ def inject_antigravity_css():
 inject_antigravity_css()
 
 # --- CONFIG & INIT ---
+# Versucht erst st.secrets (Cloud/Lokal auto), Fallback auf manuelles Laden
 try:
-    config = toml.load("secrets.toml")
-except FileNotFoundError:
-    st.error("Config missing.")
+    if "SUPABASE_URL" in st.secrets:
+        config = st.secrets
+    else:
+        config = toml.load("secrets.toml")
+except (FileNotFoundError, AttributeError):
+    st.error("Keine Secrets gefunden. Bitte in Streamlit Cloud unter Settings > Secrets eintragen.")
     st.stop()
 
 # API Params
