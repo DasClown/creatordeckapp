@@ -1,371 +1,212 @@
 import streamlit as st
 import pandas as pd
 import requests
-from datetime import datetime, date
+import toml
+import plotly.express as px
+import os
+from datetime import datetime
 from supabase import create_client, Client
+import google.generativeai as genai
 
-# --- KONFIGURATION ---
-st.set_page_config(page_title="CreatorDeck", page_icon="🚀", layout="wide")
+# --- SETUP & STYLE ---
+st.set_page_config(page_title="Creator Deck", layout="wide", page_icon="⚫")
 
-# --- SUPABASE CLIENT ---
-@st.cache_resource
-def init_supabase() -> Client:
-    """Initialisiert den Supabase Client."""
-    try:
-        url = st.secrets["supabase"]["url"]
-        key = st.secrets["supabase"]["key"]
-        return create_client(url, key)
-    except Exception as e:
-        st.error(f"Supabase Verbindungsfehler: {e}")
-        return None
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;900&display=swap');
+    html, body, [class*="css"] { font-family: 'Inter', sans-serif; background-color: #000000; color: #ffffff; }
+    header {visibility: hidden;}
+    [data-testid="stVerticalBlockBorderWrapper"] { background-color: #000000; border: none; }
+    [data-testid="stMetricValue"] { font-size: 3rem !important; font-weight: 900 !important; color: white !important; }
+    .stButton > button { border: 1px solid #333; border-radius: 30px; color: white; background: transparent; }
+    .stButton > button:hover { border-color: white; background: white; color: black; }
+    .ai-box { border-left: 2px solid white; padding-left: 20px; margin-top: 20px; color: #ccc; }
+</style>
+""", unsafe_allow_html=True)
 
-supabase = init_supabase()
-
-# --- HILFSFUNKTIONEN ---
-def get_instagram_followers():
-    """Ruft die Follower-Zahl von der Instagram Graph API ab."""
-    try:
-        if "INSTAGRAM_ACCESS_TOKEN" in st.secrets and "INSTAGRAM_ACCOUNT_ID" in st.secrets:
-            token = st.secrets["INSTAGRAM_ACCESS_TOKEN"]
-            id = st.secrets["INSTAGRAM_ACCOUNT_ID"]
-            url = f"https://graph.facebook.com/v18.0/{id}?fields=followers_count&access_token={token}"
-            response = requests.get(url).json()
-            if 'error' in response:
-                st.error(f"API Fehler: {response['error']['message']}")
-                return 0
-            return response.get('followers_count', 0)
-        else:
-            return 0
-    except Exception as e:
-        st.error(f"Verbindungsfehler: {e}")
-        return 0
-
-def get_recent_media():
-    """Ruft die letzten 3 Instagram-Posts von der Graph API ab."""
-    try:
-        if "INSTAGRAM_ACCESS_TOKEN" in st.secrets and "INSTAGRAM_ACCOUNT_ID" in st.secrets:
-            token = st.secrets["INSTAGRAM_ACCESS_TOKEN"]
-            account_id = st.secrets["INSTAGRAM_ACCOUNT_ID"]
-            url = f"https://graph.facebook.com/v18.0/{account_id}/media"
-            params = {
-                "fields": "id,caption,media_type,media_url,thumbnail_url,permalink,like_count,comments_count,timestamp",
-                "limit": 3,
-                "access_token": token
-            }
-            response = requests.get(url, params=params).json()
-            
-            if 'error' in response:
-                st.error(f"API Fehler: {response['error']['message']}")
-                return []
-            
-            return response.get('data', [])
-        else:
-            return []
-    except Exception as e:
-        st.error(f"Verbindungsfehler: {e}")
-        return []
-
-def load_content_from_supabase() -> pd.DataFrame:
-    """Lädt Content-Daten aus Supabase."""
-    if not supabase:
-        return pd.DataFrame()
+# --- ROBUST CONFIG LOADER (Das Herzstück) ---
+def find_secret(key_name):
+    """Sucht einen Key überall in st.secrets, egal ob flach oder verschachtelt."""
+    # 1. Suche direkt (Flat)
+    if key_name in st.secrets:
+        return st.secrets[key_name]
     
-    try:
-        response = supabase.table('content_plan').select("*").order('datum', desc=True).execute()
-        
-        if response.data:
-            df = pd.DataFrame(response.data)
-            # Konvertiere Datum-Strings zu date-Objekten
-            if 'datum' in df.columns:
-                df['datum'] = pd.to_datetime(df['datum']).dt.date
-            # Rename columns to match UI (capitalize)
-            df = df.rename(columns={
-                'id': 'ID',
-                'datum': 'Datum',
-                'titel': 'Titel',
-                'format': 'Format',
-                'status': 'Status',
-                'notizen': 'Notizen'
-            })
-            return df
-        else:
-            return pd.DataFrame(columns=['ID', 'Datum', 'Titel', 'Format', 'Status', 'Notizen'])
-    except Exception as e:
-        st.error(f"Fehler beim Laden der Daten: {e}")
-        return pd.DataFrame(columns=['ID', 'Datum', 'Titel', 'Format', 'Status', 'Notizen'])
+    # 2. Suche in Untergruppen (z.B. [supabase])
+    for section in st.secrets:
+        if isinstance(st.secrets[section], dict):
+            if key_name in st.secrets[section]:
+                return st.secrets[section][key_name]
+                
+    return None
 
-def init_session_state():
-    """Initialisiert die Datenbank im Session State - lädt aus Supabase."""
-    if 'content_df' not in st.session_state:
-        st.session_state['content_df'] = load_content_from_supabase()
+def get_config():
+    # Liste der benötigten Keys
+    required_keys = ["SUPABASE_URL", "SUPABASE_KEY", "GEMINI_API_KEY", "PAGE_ACCESS_TOKEN", "IG_USER_ID", "API_VERSION"]
+    loaded_config = {}
+    missing_keys = []
 
-def check_password():
-    """Prüft das Passwort und gibt nur bei korrekter Eingabe Zugriff."""
-    # Prüfe, ob bereits verifiziert
-    if st.session_state.get('password_correct', False):
-        return True
-    
-    # Zeige Login-Screen
-    st.title("🔒 CreatorDeck Login")
-    st.markdown("Bitte gib den Zugangscode ein, um fortzufahren.")
-    
-    password = st.text_input("Zugangscode", type="password", key="password_input")
-    
-    if st.button("Anmelden", type="primary"):
-        # Prüfe Passwort
-        if "APP_PASSWORD" in st.secrets and password == st.secrets["APP_PASSWORD"]:
-            st.session_state['password_correct'] = True
-            st.success("✅ Zugriff gewährt!")
-            st.rerun()
+    # Versuch 1: Aus Cloud Secrets laden (intelligent)
+    for key in required_keys:
+        val = find_secret(key)
+        if val:
+            loaded_config[key] = val
         else:
-            st.error("❌ Zugriff verweigert - Falscher Zugangscode")
-            st.stop()
-    else:
+            missing_keys.append(key)
+
+    # Versuch 2: Falls Cloud leer, versuche lokale Datei (Fallback)
+    if missing_keys and os.path.exists("secrets.toml"):
+        try:
+            local_toml = toml.load("secrets.toml")
+            for key in missing_keys:
+                if key in local_toml:
+                    loaded_config[key] = local_toml[key]
+                    # Entferne aus missing list, da gefunden
+        except:
+            pass
+
+    # Ergebnis prüfen
+    # Wir prüfen hier nur SUPABASE und TOKEN kritisch
+    if "SUPABASE_URL" not in loaded_config or "PAGE_ACCESS_TOKEN" not in loaded_config:
+        st.error(f"❌ KONFIGURATIONS-FEHLER: Folgende Secrets fehlen: {missing_keys}")
+        st.info(f"Gefundene Keys in st.secrets: {list(st.secrets.keys())}")
         st.stop()
-    
-    return False
+        
+    return loaded_config
 
-# --- HAUPTPROGRAMM ---
-def main():
-    # Passwort-Schutz als erstes prüfen
-    check_password()
-    
-    st.title("🚀 CreatorDeck")
-    
-    init_session_state()
-    
-    # 1. TABS ERSTELLEN
-    tab_cockpit, tab_planner, tab_settings = st.tabs(["📊 Cockpit", "🗓️ Content Planer", "⚙️ Einstellungen"])
+config = get_config()
 
-    # --- TAB 1: COCKPIT ---
-    with tab_cockpit:
-        st.header("Performance Übersicht")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        # Instagram Stats (Live Data)
-        followers = get_instagram_followers()
-        
-        with col1:
-            st.metric(label="Instagram Follower", value=f"{followers:,}")
-        
-        with col2:
-            # Beispiel für statische/berechnete Metrik aus dem Planer
-            df = st.session_state['content_df']
-            planned_count = len(df[df['Status'] == 'Ready']) if not df.empty else 0
-            st.metric(label="Beiträge Ready", value=planned_count)
-        
-        with col3:
-            # Gesamt Content-Ideen
-            total_ideas = len(st.session_state['content_df'])
-            st.metric(label="Content-Ideen", value=total_ideas)
-        
-        st.divider()
-        
-        # Visual Analytics
-        st.subheader("📊 Content Pipeline Analytics")
-        
-        df = st.session_state['content_df']
-        
-        if not df.empty:
-            c1, c2 = st.columns(2)
-            
-            with c1:
-                st.markdown("**Status-Verteilung**")
-                # Gruppiere nach Status und zähle
-                status_counts = df['Status'].value_counts()
-                st.bar_chart(status_counts)
-            
-            with c2:
-                st.markdown("**Format-Verteilung**")
-                # Gruppiere nach Format und zähle
-                format_counts = df['Format'].value_counts()
-                st.bar_chart(format_counts)
-        else:
-            st.info("📭 Noch keine Daten für Grafiken vorhanden.")
-        
-        st.divider()
-        
-        # Live Media Feed
-        st.subheader("📸 Neueste Posts")
-        
-        recent_posts = get_recent_media()
-        
-        if recent_posts and len(recent_posts) > 0:
-            cols = st.columns(3)
-            
-            for idx, post in enumerate(recent_posts):
-                with cols[idx]:
-                    # Bestimme die richtige Bild-URL
-                    if post.get('media_type') == 'VIDEO':
-                        image_url = post.get('thumbnail_url', '')
-                    else:
-                        image_url = post.get('media_url', '')
-                    
-                    # Zeige das Bild
-                    if image_url:
-                        st.image(image_url, use_container_width=True)
-                    
-                    # Metriken
-                    likes = post.get('like_count', 0)
-                    comments = post.get('comments_count', 0)
-                    st.markdown(f"❤️ **{likes:,}** | 💬 **{comments:,}**")
-                    
-                    # Caption (gekürzt)
-                    caption = post.get('caption', 'Kein Text')
-                    if len(caption) > 50:
-                        caption = caption[:50] + '...'
-                    st.caption(caption)
-                    
-                    # Link zum Post
-                    permalink = post.get('permalink', '')
-                    if permalink:
-                        st.link_button("Auf Insta ansehen", permalink, use_container_width=True)
-        else:
-            st.info("📭 Keine Posts gefunden oder API-Limit erreicht.")
+# --- INIT CLIENTS ---
+try:
+    supabase = create_client(config["SUPABASE_URL"], config["SUPABASE_KEY"])
+    genai.configure(api_key=config["GEMINI_API_KEY"])
+except Exception as e:
+    st.error(f"❌ Client Init Fehler: {e}")
+    st.stop()
 
-    # --- TAB 2: CONTENT PLANER ---
-    with tab_planner:
-        st.header("Content Planung")
-        
-        # UI Komponente C: Quick Stats
-        df = st.session_state['content_df']
-        
-        m_col1, m_col2, m_col3 = st.columns(3)
-        m_col1.metric("Offene Ideen", len(df[df['Status'] == 'Idee']) if not df.empty else 0)
-        m_col2.metric("In Arbeit (Drafts)", len(df[df['Status'] == 'Draft']) if not df.empty else 0)
-        m_col3.metric("Gesamt", len(df))
-        
-        st.divider()
+# API Params
+BASE_URL = f"https://graph.facebook.com/{config['API_VERSION']}/"
+PARAMS = {'access_token': config['PAGE_ACCESS_TOKEN']}
 
-        # UI Komponente A: Eingabe (Neue Idee)
-        with st.expander("➕ Neue Idee erfassen", expanded=False):
-            with st.form("new_post_form"):
-                c1, c2 = st.columns(2)
-                with c1:
-                    new_title = st.text_input("Titel / Thema")
-                    new_date = st.date_input("Geplantes Datum", date.today())
-                with c2:
-                    new_format = st.selectbox("Format", ["Reel", "Post", "Carousel", "Story"])
-                    new_status = st.selectbox("Status", ["Idee", "Draft", "Ready", "Published"])
+# --- DATA FUNCTIONS ---
+@st.cache_data(ttl=600)
+def fetch_live_data():
+    try:
+        profile = requests.get(BASE_URL + config['IG_USER_ID'], params={**PARAMS, 'fields': 'username,name,followers_count,media_count,profile_picture_url'}).json()
+        if 'error' in profile: return profile, []
+
+        media_resp = requests.get(BASE_URL + config['IG_USER_ID'] + "/media", params={**PARAMS, 'fields': 'id,caption,media_type,timestamp,like_count,comments_count,permalink,media_url,thumbnail_url', 'limit': 20}).json()
+        
+        posts = []
+        if 'data' in media_resp:
+            for p in media_resp['data']:
+                try:
+                    ins = requests.get(BASE_URL + p['id'] + "/insights", params={**PARAMS, 'metric': 'reach,impressions'}).json()
+                    reach = ins['data'][0]['values'][0]['value'] if 'data' in ins else 0
+                    imps = ins['data'][1]['values'][0]['value'] if 'data' in ins and len(ins['data']) > 1 else 0
+                except: reach, imps = 0, 0
                 
-                new_notes = st.text_area("Notizen / Skript")
-                
-                submitted = st.form_submit_button("Speichern")
-                
-                if submitted and supabase:
-                    if not new_title:
-                        st.error("⚠️ Bitte gib einen Titel ein!")
-                    else:
-                        # Erstelle neuen Eintrag für Supabase
-                        new_data = {
-                            'datum': new_date.isoformat(),
-                            'titel': new_title,
-                            'format': new_format,
-                            'status': new_status,
-                            'notizen': new_notes
-                        }
-                        
-                        try:
-                            # Insert in Supabase
-                            response = supabase.table('content_plan').insert(new_data).execute()
-                            st.success(f"✅ Idee '{new_title}' wurde gespeichert!")
-                            # Reload data
-                            st.session_state['content_df'] = load_content_from_supabase()
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Fehler beim Speichern: {e}")
+                img = p.get('thumbnail_url', p.get('media_url', ''))
+                posts.append({
+                    'ID': p['id'], 'Datum': pd.to_datetime(p['timestamp']), 'Typ': p['media_type'],
+                    'Caption': p.get('caption', '')[:50], 'Likes': p.get('like_count', 0),
+                    'Kommentare': p.get('comments_count', 0), 'Reichweite': reach, 'Impressions': imps,
+                    'Engagement': p.get('like_count', 0) + p.get('comments_count', 0),
+                    'Image_URL': img, 'Link': p.get('permalink')
+                })
+        return profile, posts
+    except Exception as e:
+        st.error(f"API Fetch Fehler: {e}")
+        return {}, []
 
-        # UI Komponente B: Übersicht (Data Editor)
-        st.subheader("Aktuelle Planung")
-        
-        if not df.empty:
-            edited_df = st.data_editor(
-                df,
-                use_container_width=True,
-                num_rows="dynamic",
-                column_config={
-                    "ID": st.column_config.NumberColumn(
-                        "ID",
-                        disabled=True,
-                        width="small"
-                    ),
-                    "Format": st.column_config.SelectboxColumn(
-                        "Format",
-                        help="Das Format des Beitrags",
-                        width="medium",
-                        options=["Reel", "Post", "Carousel", "Story"],
-                        required=True,
-                    ),
-                    "Status": st.column_config.SelectboxColumn(
-                        "Status",
-                        width="medium",
-                        options=["Idee", "Draft", "Ready", "Published"],
-                        required=True,
-                    ),
-                    "Datum": st.column_config.DateColumn(
-                        "Datum",
-                        format="DD.MM.YYYY",
-                    ),
-                },
-                hide_index=True,
-                key="content_editor"
-            )
-            
-            # Sync Button
-            if st.button("💾 Änderungen synchronisieren", type="primary", use_container_width=True):
-                if supabase:
-                    try:
-                        # Iteriere durch edited_df und update in Supabase
-                        for _, row in edited_df.iterrows():
-                            update_data = {
-                                'datum': row['Datum'].isoformat() if isinstance(row['Datum'], date) else row['Datum'],
-                                'titel': row['Titel'],
-                                'format': row['Format'],
-                                'status': row['Status'],
-                                'notizen': row['Notizen']
-                            }
-                            
-                            # Upsert basierend auf ID
-                            supabase.table('content_plan').update(update_data).eq('id', row['ID']).execute()
-                        
-                        st.success("✅ Alle Änderungen wurden synchronisiert!")
-                        st.session_state['content_df'] = load_content_from_supabase()
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Fehler beim Synchronisieren: {e}")
-        else:
-            st.info("📭 Noch keine Content-Ideen vorhanden. Erstelle deine erste Idee oben!")
+def save_snapshot_supabase(fol, med, eng):
+    today = datetime.now().strftime("%Y-%m-%d")
+    data = {"date": today, "followers": fol, "media_count": med, "avg_engagement": eng}
+    try:
+        supabase.table("instagram_history").upsert(data, on_conflict="date").execute()
+        st.toast("Snapshot gespeichert!", icon="⚫")
+    except Exception as e:
+        st.error(f"Supabase Write Fehler: {e}")
 
-    # --- TAB 3: EINSTELLUNGEN ---
-    with tab_settings:
-        st.header("Einstellungen")
-        st.info("🚧 Dieser Bereich ist in Entwicklung.")
-        
-        with st.expander("API Konfiguration"):
-            st.markdown("""
-            **Instagram Graph API**
-            
-            Füge deine Credentials in `.streamlit/secrets.toml` hinzu:
-            ```toml
-            INSTAGRAM_ACCESS_TOKEN = "dein_token"
-            INSTAGRAM_ACCOUNT_ID = "deine_id"
-            ```
-            
-            **Supabase Database**
-            
-            ```toml
-            [supabase]
-            url = "https://dein-projekt.supabase.co"
-            key = "dein_anon_key"
-            ```
-            """)
-        
-        with st.expander("🔄 Daten neu laden"):
-            if st.button("Daten aus Supabase neu laden"):
-                st.session_state['content_df'] = load_content_from_supabase()
-                st.success("✅ Daten wurden neu geladen!")
-                st.rerun()
+def load_history_supabase():
+    try:
+        response = supabase.table("instagram_history").select("*").order("date").execute()
+        return pd.DataFrame(response.data) if response.data else pd.DataFrame()
+    except Exception as e:
+        # Silent fail für saubere UI beim ersten Start
+        print(e)
+        return pd.DataFrame()
 
-if __name__ == "__main__":
-    main()
+def run_ai_analysis(df_input):
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    csv_data = df_input[['Datum', 'Typ', 'Reichweite', 'Engagement', 'Caption']].to_csv(index=False)
+    prompt = f"Act as a social media strategist. Analyze:\n{csv_data}\n1. Top content type/time.\n2. One weakness.\n3. One strict action step. Bullet points."
+    return model.generate_content(prompt).text
+
+# --- DASHBOARD RENDER ---
+prof, posts = fetch_live_data()
+if not prof or 'error' in prof: 
+    if prof: st.error(prof['error']['message'])
+    st.stop()
+
+df = pd.DataFrame(posts)
+fol = prof.get('followers_count', 0)
+if not df.empty: df['ER'] = round((df['Engagement'] / fol) * 100, 2)
+
+with st.sidebar:
+    st.markdown("### ACCOUNT")
+    st.caption(f"@{prof.get('username')}")
+    st.metric("Follower", fol)
+    st.divider()
+    if st.button("SNAPSHOT"):
+        avg = int(df['Engagement'].mean()) if not df.empty else 0
+        save_snapshot_supabase(fol, prof.get('media_count'), avg)
+
+st.title("ANTIGRAVITY DECK")
+st.markdown("<div style='height: 20px'></div>", unsafe_allow_html=True) 
+
+t1, t2, t3 = st.tabs(["VISUALS", "DATA + AI", "TIMELINE"])
+
+with t1:
+    if not df.empty:
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("REACH", int(df['Reichweite'].mean()))
+        c2.metric("LIKES", int(df['Likes'].mean()))
+        c3.metric("ER", f"{round(df['ER'].mean(), 2)}%")
+        c4.metric("PEAK", int(df['Reichweite'].max()))
+        st.markdown("<div style='height: 40px'></div>", unsafe_allow_html=True)
+        cols_per_row = 3
+        for i in range(0, len(df), cols_per_row):
+            cols = st.columns(cols_per_row)
+            for col, (_, row) in zip(cols, df.iloc[i:i+cols_per_row].iterrows()):
+                with col:
+                    if row['Image_URL']: st.image(row['Image_URL'], use_container_width=True)
+                    st.caption(f"👁️ {row['Reichweite']} | ❤️ {row['Likes']}")
+    else:
+        st.info("No posts yet. Post on Instagram to see data here.")
+                    
+with t2:
+    if not df.empty:
+        c_ai, c_chart = st.columns([1, 2])
+        with c_ai:
+            if st.button("ANALYZE ⚡"):
+                with st.spinner("Thinking..."):
+                    st.markdown(f"<div class='ai-box'>{run_ai_analysis(df)}</div>", unsafe_allow_html=True)
+        with c_chart:
+            fig = px.line(df, x='Datum', y=['Reichweite', 'Impressions'], template="plotly_dark")
+            fig.update_layout(paper_bgcolor="black", plot_bgcolor="black", font_color="white")
+            st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(df[['Datum', 'Typ', 'Reichweite', 'Likes', 'ER']].sort_values(by='Datum', ascending=False), use_container_width=True, hide_index=True)
+    else:
+        st.info("No data for analysis.")
+
+with t3:
+    hist = load_history_supabase()
+    if not hist.empty:
+        hist['date'] = pd.to_datetime(hist['date'])
+        fig_h = px.area(hist, x='date', y='followers', template="plotly_dark")
+        fig_h.update_layout(paper_bgcolor="black", plot_bgcolor="black", font_color="white")
+        fig_h.update_traces(line_color="white", fillcolor="rgba(255,255,255,0.1)")
+        st.plotly_chart(fig_h, use_container_width=True)
+        st.dataframe(hist, use_container_width=True, hide_index=True)
+    else:
+        st.caption("No timeline data yet.")
