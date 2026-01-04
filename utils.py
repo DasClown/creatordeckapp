@@ -193,10 +193,21 @@ def render_card(title, value, subtext=None, trend=None, icon=None):
 
 @st.cache_resource
 def init_supabase():
-    """Initialisiere Supabase Client mit Error Handling"""
+    """Initialisiere Supabase Client mit Error Handling - Robust Config Loader"""
     try:
-        url = st.secrets["SUPABASE_URL"]
-        key = st.secrets["SUPABASE_KEY"]
+        # Versuche flache Keys (SUPABASE_URL, SUPABASE_KEY)
+        if "SUPABASE_URL" in st.secrets:
+            url = st.secrets["SUPABASE_URL"]
+            key = st.secrets["SUPABASE_KEY"]
+        # Fallback: verschachtelte Keys ([supabase])
+        elif "supabase" in st.secrets:
+            url = st.secrets["supabase"]["url"]
+            key = st.secrets["supabase"]["key"]
+        else:
+            st.error("⚠️ Supabase Secrets nicht gefunden. Bitte SUPABASE_URL und SUPABASE_KEY in Secrets konfigurieren.")
+            st.stop()
+            return None
+        
         return create_client(url, key)
     except Exception as e:
         st.error(f"⚠️ Supabase Verbindungsfehler: {e}")
