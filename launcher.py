@@ -3,10 +3,11 @@ import pandas as pd
 import requests
 import toml
 import os
-import plotly.express as px
+import time
 from datetime import datetime
 from supabase import create_client
 import google.generativeai as genai
+import plotly.express as px
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Creator Deck", layout="wide", page_icon="⚫")
@@ -20,6 +21,7 @@ st.markdown("""
     [data-testid="stVerticalBlockBorderWrapper"] { background-color: #000000; border: none; }
     [data-testid="stMetricValue"] { font-size: 3rem !important; font-weight: 900 !important; color: white !important; }
     .stTextInput > div > div > input { color: white; background-color: #111; border: 1px solid #333; }
+    .ai-box { border-left: 2px solid white; padding-left: 20px; margin-top: 20px; color: #ccc; background: #111; padding: 20px; border-radius: 0 10px 10px 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -42,14 +44,10 @@ config = load_config()
 
 # --- GATEKEEPER (LOGIN) ---
 def check_password():
-    """Returns True if the user had the correct password."""
     if "password_correct" not in st.session_state:
         st.session_state.password_correct = False
-
     if st.session_state.password_correct:
         return True
-
-    # Login Maske
     st.markdown("<br><br><br>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns([1, 2, 1])
     with c2:
@@ -63,8 +61,7 @@ def check_password():
                 st.error("Access Denied.")
     return False
 
-if not check_password():
-    st.stop()
+if not check_password(): st.stop()
 
 # --- INIT CLIENTS ---
 try:
@@ -106,13 +103,35 @@ def load_history():
     try: res = supabase.table("instagram_history").select("*").order("date").execute(); return pd.DataFrame(res.data) if res.data else pd.DataFrame()
     except: return pd.DataFrame()
 
-def run_ai(df_in):
+# --- AI FUNCTIONS ---
+def run_ai_analysis(df_in):
     model = genai.GenerativeModel('gemini-1.5-flash')
     csv_txt = df_in[['Datum', 'Typ', 'Reichweite', 'Engagement']].to_csv(index=False)
     prompt = f"Analyze IG data:\n{csv_txt}\n1. Best content.\n2. Weakness.\n3. Action step. Short bullets."
     return model.generate_content(prompt).text
 
-# --- DASHBOARD ---
+def generate_post_idea(topic, df_in):
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    # Wir geben der AI die besten 5 Posts als Kontext
+    top_posts = df_in.sort_values(by='Engagement', ascending=False).head(5)[['Caption', 'Typ', 'Engagement']].to_string()
+    
+    prompt = f"""
+    You are a professional creator. Write a new Instagram post about: "{topic}".
+    
+    CONTEXT (My best performing posts):
+    {top_posts}
+    
+    TASK:
+    1. Write a Hook (First sentence).
+    2. Write the Caption (Short, punchy, similar style to my top posts).
+    3. Suggest the Visual (Image/Reel description).
+    4. 5-10 Hashtags.
+    
+    Output Format: Markdown.
+    """
+    return model.generate_content(prompt).text
+
+# --- DASHBOARD LAYOUT ---
 prof, posts = fetch_live_data()
 if not prof or 'error' in prof: st.error(prof.get('error', {}).get('message', 'API Error')); st.stop()
 df = pd.DataFrame(posts)
@@ -132,7 +151,8 @@ with st.sidebar:
         st.rerun()
 
 st.title("ANTIGRAVITY DECK 🚀")
-t1, t2, t3 = st.tabs(["VISUALS", "DATA + AI", "TIMELINE"])
+t1, t2, t3, t4 = st.tabs(["VISUALS", "DATA + AI", "TIMELINE", "FACTORY"])
+
 with t1:
     if not df.empty:
         c1, c2, c3, c4 = st.columns(4)
@@ -142,16 +162,29 @@ with t1:
             with cols[i % 3]:
                 if row['Image_URL']: st.image(row['Image_URL'], use_container_width=True)
                 st.caption(f"👁️ {row['Reichweite']} | ❤️ {row['Likes']}")
+
 with t2:
     if not df.empty:
         c_ai, c_chart = st.columns([1, 2])
         with c_ai:
             if st.button("ANALYZE ⚡"):
-                with st.spinner("Processing..."): st.markdown(f"<div class='ai-box'>{run_ai(df)}</div>", unsafe_allow_html=True)
+                with st.spinner("Processing..."): st.markdown(f"<div class='ai-box'>{run_ai_analysis(df)}</div>", unsafe_allow_html=True)
         with c_chart: st.plotly_chart(px.line(df, x='Datum', y=['Reichweite', 'Impressions'], template="plotly_dark").update_layout(paper_bgcolor="black", plot_bgcolor="black"), use_container_width=True)
         st.dataframe(df, use_container_width=True, hide_index=True)
+
 with t3:
     hist = load_history()
     if not hist.empty: 
         hist['date'] = pd.to_datetime(hist['date'])
         st.plotly_chart(px.area(hist, x='date', y='followers', template="plotly_dark").update_layout(paper_bgcolor="black", plot_bgcolor="black").update_traces(line_color="white", fillcolor="rgba(255,255,255,0.1)"), use_container_width=True)
+
+with t4:
+    st.markdown("### CONTENT ENGINE")
+    topic = st.text_input("Worüber soll der nächste Post handeln?", placeholder="z.B. Mindset am Montagmorgen...")
+    if st.button("GENERATE DRAFT ⚡"):
+        if topic:
+            with st.spinner("Analyzing style & generating copy..."):
+                draft = generate_post_idea(topic, df)
+                st.markdown(f"<div class='ai-box'>{draft}</div>", unsafe_allow_html=True)
+        else:
+            st.warning("Bitte Thema eingeben.")
