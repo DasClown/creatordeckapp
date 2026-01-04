@@ -83,7 +83,6 @@ def inject_antigravity_css():
             border-bottom: 2px solid #ffffff !important;
         }
         
-        /* AI Box Styling */
         .ai-box {
             border-left: 2px solid #ffffff;
             padding-left: 20px;
@@ -103,16 +102,22 @@ def inject_antigravity_css():
 
 inject_antigravity_css()
 
-# --- CONFIG & INIT ---
-# Versucht erst st.secrets (Cloud/Lokal auto), Fallback auf manuelles Laden
-try:
+# --- INTELLIGENT CONFIG LOADER ---
+# Dieser Block entscheidet: Cloud oder Lokal?
+def load_config():
+    # 1. Cloud Mode: Prüfen ob Secrets in st.secrets existieren
     if "SUPABASE_URL" in st.secrets:
-        config = st.secrets
-    else:
-        config = toml.load("secrets.toml")
-except (FileNotFoundError, AttributeError):
-    st.error("Keine Secrets gefunden. Bitte in Streamlit Cloud unter Settings > Secrets eintragen.")
+        return st.secrets
+    
+    # 2. Local Mode: Prüfen ob secrets.toml existiert
+    if os.path.exists("secrets.toml"):
+        return toml.load("secrets.toml")
+        
+    # 3. Notfall: Keine Secrets gefunden
+    st.error("CRITICAL: No secrets found. Please add secrets.toml (local) or configure Secrets in Streamlit Cloud.")
     st.stop()
+
+config = load_config()
 
 # API Params
 BASE_URL = f"https://graph.facebook.com/{config['API_VERSION']}/"
@@ -172,13 +177,14 @@ def load_history_supabase():
         response = supabase.table("instagram_history").select("*").order("date").execute()
         return pd.DataFrame(response.data) if response.data else pd.DataFrame()
     except Exception as e:
+        # Kein Fehler anzeigen, wenn Tabelle leer ist, nur Log
+        print(f"Supabase Log: {e}")
         return pd.DataFrame()
 
 # --- AI ANALYST ---
 def run_ai_analysis(df_input):
     model = genai.GenerativeModel('gemini-1.5-flash')
     
-    # Daten für Prompt vorbereiten (CSV String)
     csv_data = df_input[['Datum', 'Typ', 'Reichweite', 'Engagement', 'Caption']].to_csv(index=False)
     
     prompt = f"""
@@ -244,9 +250,7 @@ with t1:
 
 with t2:
     if not df.empty:
-        # AI Section
         c_ai, c_chart = st.columns([1, 2])
-        
         with c_ai:
             st.markdown("##### AI STRATEGIST")
             if st.button("ANALYZE DATA ⚡"):
