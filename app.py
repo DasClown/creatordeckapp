@@ -155,7 +155,11 @@ if page == "DASHBOARD":
     st.info("💡 Dashboard-Logik wird hier integriert (Instagram API, Analytics, etc.)")
 
 elif page == "GALLERY":
-    gallery.render_gallery()
+    supabase = init_supabase()
+    if supabase:
+        gallery.render_gallery(supabase)
+    else:
+        st.error("⚠️ Supabase nicht konfiguriert. Gallery benötigt Cloud Storage.")
 
 elif page == "CHANNELS":
     channels.render_channels()
