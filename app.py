@@ -10,8 +10,77 @@ import google.generativeai as genai
 # --- SETUP ---
 st.set_page_config(page_title="CreatorOS", layout="wide", page_icon="⚫")
 
-# CSS (identisch zu vorher)
-st.markdown("<style>html, body, [class*='css'] { font-family: 'Inter', sans-serif; background-color: #000000; color: #ffffff; } header {visibility: hidden;} [data-testid='stSidebar'] { background-color: #050505; border-right: 1px solid #111; }</style>", unsafe_allow_html=True)
+# --- CSS STYLING (WHITE & CLEAN) ---
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+    
+    /* Hintergrund und Grundschrift */
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+        background-color: #ffffff;
+        color: #1a1a1a;
+    }
+
+    /* Sidebar Styling */
+    [data-testid="stSidebar"] {
+        background-color: #f8f9fa;
+        border-right: 1px solid #eeeeee;
+    }
+    
+    /* Buttons */
+    .stButton > button {
+        background-color: #ffffff;
+        color: #1a1a1a;
+        border: 1px solid #dddddd;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+    .stButton > button:hover {
+        border-color: #000000;
+        background-color: #f8f9fa;
+    }
+
+    /* Metriken */
+    [data-testid="stMetricValue"] {
+        font-size: 2.5rem !important;
+        font-weight: 600 !important;
+        color: #000000 !important;
+    }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 24px;
+        background-color: transparent;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        background-color: transparent;
+        border: none;
+        color: #888888;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #000000 !important;
+        border-bottom: 2px solid #000000 !important;
+    }
+
+    /* Input Felder */
+    .stTextInput > div > div > input {
+        background-color: #ffffff;
+        border: 1px solid #eeeeee;
+        border-radius: 8px;
+    }
+    
+    /* Karten-Effekt für Boxen */
+    .ai-box, .custom-card {
+        background-color: #fdfdfd;
+        border: 1px solid #eeeeee;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # Login Check (Gekürzt für Übersicht)
 if "password_correct" not in st.session_state: st.session_state.password_correct = False
