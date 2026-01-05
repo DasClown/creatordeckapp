@@ -102,8 +102,58 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Login Check (Gekürzt für Übersicht)
-if "password_correct" not in st.session_state: st.session_state.password_correct = False
+# --- LANDING PAGE ---
+def render_landing_page():
+    # Hero Section
+    st.markdown("""
+        <div style='padding: 100px 20px; text-align: center;'>
+            <h1 style='font-size: 72px; font-weight: 300; letter-spacing: -2px; margin-bottom: 10px;'>
+                CREATOR OS
+            </h1>
+            <p style='font-size: 20px; color: #666; font-weight: 300; margin-bottom: 40px;'>
+                The Intelligence Layer for High-Scale Creators.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Value Propositions (3 Spalten)
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("### 01 ANALYZE")
+        st.caption("Echtzeit-Performance-Tracking über alle Plattformen hinweg. Automatisierte Daten-Snapshots jede Nacht.")
+
+    with col2:
+        st.markdown("### 02 GENERATE")
+        st.caption("AI-Factory, die deinen Erfolg versteht. Captions und Hooks basierend auf deinen Top-Inhalten.")
+
+    with col3:
+        st.markdown("### 03 SCALE")
+        st.caption("Deals, Cashflow und Redaktionsplan in einer einzigen, sauberen Oberfläche.")
+
+    st.divider()
+
+    # Login / Access Trigger
+    c1, c2, c3 = st.columns([1,2,1])
+    with c2:
+        st.markdown("<div style='text-align: center; margin-top: 50px;'>", unsafe_allow_html=True)
+        if st.button("ENTER TERMINAL"):
+            st.session_state.view = "login"
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+# --- VIEW MANAGEMENT ---
+if "view" not in st.session_state:
+    st.session_state.view = "landing"
+if "password_correct" not in st.session_state:
+    st.session_state.password_correct = False
+
+# Landing Page
+if st.session_state.view == "landing":
+    render_landing_page()
+    st.stop()
+
+# Login Check
 if not st.session_state.password_correct:
     pwd = st.text_input("Access Code", type="password")
     if st.button("UNLOCK"):
