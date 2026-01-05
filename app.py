@@ -245,7 +245,7 @@ def render_landing_page():
     # Zentrales Logo
     c1, c2, c3 = st.columns([2, 1, 2])
     with c2:
-        st.image("assets/logo_symbol.jpg", use_container_width=True)
+        st.image("assets/logo_symbol.jpg", width="stretch")
     
     st.markdown("<h1>CONTENT CORE</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #666;'>SYSTEM INITIALIZATION</p>", unsafe_allow_html=True)
@@ -320,7 +320,7 @@ def render_landing_page():
 def render_auth_interface():
     c1, c2, c3 = st.columns([1, 2, 1])
     with c2:
-        st.image("assets/logo_full.jpg", use_container_width=True)
+        st.image("assets/logo_full.jpg", width="stretch")
     st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
     
     auth_tab1, auth_tab2 = st.tabs(["REGISTRIERUNG", "LOGIN"])
@@ -401,7 +401,7 @@ def render_dashboard_layout():
         return
 
     with st.sidebar:
-        st.image("assets/logo_full.jpg", use_container_width=True)
+        st.image("assets/logo_full.jpg", width="stretch")
         st.markdown("<div style='margin-top: -20px;'></div>", unsafe_allow_html=True)
         st.info("ALPHA ACCESS: FREE FOREVER")
         

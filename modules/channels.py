@@ -18,7 +18,7 @@ def render_channels():
             "Views": [5400, 3200, 8900],
             "Retention": ["45%", "38%", "52%"]
         })
-        st.dataframe(yt_data, use_container_width=True, hide_index=True)
+        st.dataframe(yt_data, width="stretch", hide_index=True)
 
     with platform[1]: # TikTok
         st.subheader("TikTok Viral Tracker")

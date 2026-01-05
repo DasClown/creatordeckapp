@@ -15,7 +15,7 @@ def render_crm(supabase):
 
     # UI
     st.subheader("Active Pipeline")
-    edited_df = st.data_editor(df_deals, use_container_width=True, hide_index=True, num_rows="dynamic")
+    edited_df = st.data_editor(df_deals, width="stretch", hide_index=True, num_rows="dynamic")
     
     if st.button("SAVE CHANGES"):
         # Logik zum Updaten/Einfügen in Supabase

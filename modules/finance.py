@@ -49,7 +49,7 @@ def render_finance(supabase):
 
     # Editor für neue Einträge
     st.subheader("Transaction Log")
-    edited_df = st.data_editor(df, use_container_width=True, num_rows="dynamic", hide_index=True)
+    edited_df = st.data_editor(df, width="stretch", num_rows="dynamic", hide_index=True)
 
     if st.button("SYNC TRANSACTIONS"):
         # Bulk Sync Logik (vereinfacht: löschen und neu schreiben oder Upsert)

@@ -40,4 +40,4 @@ def render_planner(supabase):
 
     if not df_plan.empty:
         st.subheader("Upcoming Schedule")
-        st.dataframe(df_plan.sort_values("publish_date"), use_container_width=True, hide_index=True)
+        st.dataframe(df_plan.sort_values("publish_date"), width="stretch", hide_index=True)

@@ -17,7 +17,7 @@ def render_deals():
         {"Brand": "Tesla", "Stage": "Negotiating", "Value": "12.000 €", "Date": "2026-03-01"}
     ])
     
-    st.data_editor(deals, use_container_width=True, num_rows="dynamic")
+    st.data_editor(deals, width="stretch", num_rows="dynamic")
     
     if st.button("CREATE NEW DEAL"):
         st.toast("Deal Template created.")
