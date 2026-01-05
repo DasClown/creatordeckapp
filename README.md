@@ -309,14 +309,14 @@ pip install --upgrade -r requirements.txt
 
 - **Email:** janick@icanhasbucket.de
 - **GitHub Issues:** [CreatorOS Issues](https://github.com/DasClown/CreatorOS/issues)
-- **Website:** [creatordeckapp.com](https://creatordeckapp.com)
+- **Website:** [creator.tech](https://creator.tech)
 
 ---
 
 ## 📄 Lizenz
 
-© 2025 CreatorDeck  
-[Impressum](https://creatordeckapp.com/impressum) | [Datenschutz](https://creatordeckapp.com/datenschutz)
+© 2025 CREATOR.TECH
+[Impressum](https://creator.tech/impressum) | [Datenschutz](https://creator.tech/datenschutz)
 
 ---
 
