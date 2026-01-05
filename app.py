@@ -66,52 +66,54 @@ def send_verification_email(email):
         st.error(f"Resend Error: {str(e)}")
         return None
 
-def get_instagram_data(handle):
-    """Fetch Instagram metrics via RapidAPI"""
-    url = "https://instagram-data12.p.rapidapi.com/user/details-by-username/"
-    querystring = {"username": handle}
+def sync_instagram_data(handle, supabase):
+    """Refined Instagram sync using instagram-statistics-api.p.rapidapi.com"""
+    # URL encoded handle link
+    profile_url = f"https://www.instagram.com/{handle}/"
+    url = "https://instagram-statistics-api.p.rapidapi.com/community"
     
     headers = {
-        "X-RapidAPI-Key": st.secrets.get("RAPIDAPI_KEY", "YOUR_KEY"),
-        "X-RapidAPI-Host": "instagram-data12.p.rapidapi.com"
+        "X-RapidAPI-Key": st.secrets.get("RAPIDAPI_KEY", "30d7195bb1msh4814c34f2c7b155p16cf1ajsn402da52d5aec"),
+        "X-RapidAPI-Host": "instagram-statistics-api.p.rapidapi.com"
     }
-
+    
     try:
-        response = requests.get(url, headers=headers, params=querystring)
-        if response.status_code == 200:
-            data = response.json()
-            return {
-                "followers": data.get("edge_followed_by", {}).get("count", 0),
-                "following": data.get("edge_follow", {}).get("count", 0),
-                "posts": data.get("edge_owner_to_timeline_media", {}).get("count", 0),
-                "biography": data.get("biography", "")
+        response = requests.get(url, headers=headers, params={"url": profile_url})
+        res = response.json()
+        
+        # Die API Struktur kann variieren, wir suchen nach den Core-Daten
+        # Basierend auf dem Nutzersnippet: meta.code == 200
+        if res.get("meta", {}).get("code") == 200:
+            d = res.get("data", {})
+            
+            payload = {
+                "user_id": st.session_state.get('user_email', 'unknown'),
+                "platform": "instagram",
+                "handle": d.get("username") or handle,
+                "followers": d.get("followers") or d.get("usersCount", 0),
+                "engagement_rate": round(d.get("avgER", 0) * 100, 2),
+                "avg_likes": d.get("avgLikes", 0),
+                "quality_score": round(d.get("qualityScore", 0) * 100, 1)
             }
+            
+            supabase.table("stats_history").insert(payload).execute()
+            st.success(f"CORE SYNC SUCCESS: {handle} verknüpft.")
+            return True
+        else:
+            st.error(f"API Fehler: {res.get('meta', {}).get('message', 'Unbekannter Fehler')}")
     except Exception as e:
-        st.error(f"API Sync Error: {e}")
-    return None
+        st.error(f"Sync-Fehler: {str(e)}")
+    return False
 
 def render_instagram_sync(supabase):
-    """UI for Instagram sync"""
+    """UI for Refined Instagram sync"""
     st.markdown("### ⚡ AUTO-SYNC: INSTAGRAM")
     handle = st.text_input("Instagram Handle", placeholder="deinaccount")
     
     if st.button("CONNECT & FETCH DATA"):
         if handle:
-            with st.spinner("Extrahiere Daten aus dem Instagram-Grid..."):
-                data = get_instagram_data(handle)
-                
-                if data:
-                    user_id = st.session_state.get('user_email', 'unknown')
-                    # Speichern in Supabase
-                    supabase.table("stats_history").insert({
-                        "user_id": user_id,
-                        "followers": data["followers"],
-                        "engagement_rate": 0.0,
-                        "platform": "instagram",
-                        "handle": handle
-                    }).execute()
-                    
-                    st.success(f"Synchronisiert: {data['followers']} Follower gefunden.")
+            with st.spinner("Initialisiere Deep-Sync mit CONTENT CORE Engine..."):
+                if sync_instagram_data(handle, supabase):
                     st.rerun()
         else:
             st.warning("Handle erforderlich.")
