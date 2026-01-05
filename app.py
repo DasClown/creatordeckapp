@@ -71,7 +71,7 @@ def run_instagram_sync(profile_url, supabase):
     api_url = "https://instagram-statistics-api.p.rapidapi.com/community"
     
     headers = {
-        "x-rapidapi-key": st.secrets.get("RAPIDAPI_KEY", "30d7195bb1msh4814c34f2c7b155p16cf1ajsn402da52d5aec"),
+        "x-rapidapi-key": st.secrets.get("RAPIDAPI_KEY"),
         "x-rapidapi-host": "instagram-statistics-api.p.rapidapi.com"
     }
     
