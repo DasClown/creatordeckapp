@@ -78,8 +78,8 @@ def run_instagram_sync(profile_url, supabase):
     params = {"url": profile_url}
 
     try:
-        with st.spinner("INITIALIZING CORE SYNC..."):
-            response = requests.get(api_url, headers=headers, params=params)
+        with st.spinner("PENETRATING INSTAGRAM API..."):
+            response = requests.get(api_url, headers=headers, params=params, timeout=15)
             if response.status_code == 200:
                 data = response.json().get("data", {})
                 
@@ -97,21 +97,21 @@ def run_instagram_sync(profile_url, supabase):
                 # Speichern in die Tabelle stats_history
                 supabase.table("stats_history").insert(stats_payload).execute()
                 
-                st.success("CORE UPDATED")
+                st.success("SYNC SUCCESSFUL")
                 return True
             else:
-                st.error(f"API ERROR: {response.status_code}")
+                st.error(f"API REJECTED: {response.status_code}")
     except Exception as e:
-        st.error(f"CONNECTION FAILED: {e}")
+        st.error(f"CORE CONNECTION LOST: {e}")
     return False
 
 def render_instagram_sync(supabase):
     """UI Komponente für den Instagram Core Sync (In Sidebar oder Landing)"""
     st.markdown("### SYSTEM CONTROL")
-    # Einzigartiger Key: 'unique_sync_input'
-    user_url = st.text_input("INSTAGRAM URL", placeholder="https://instagram.com/...", key="unique_sync_input")
+    # Einzigartiger Key: 'engine_sync_input'
+    user_url = st.text_input("TARGET INSTAGRAM URL", placeholder="https://instagram.com/...", key="engine_sync_input")
 
-    if st.button("START SYNC", key="sync_btn"):
+    if st.button("INITIALIZE SYNC", key="engine_sync_button"):
         if user_url:
             if run_instagram_sync(user_url, supabase):
                 st.rerun()
@@ -161,7 +161,7 @@ def render_styles():
         h1, h2, h3, h4 { 
             font-family: 'Inter', sans-serif; 
             font-weight: 800 !important; 
-            letter-spacing: -1.5px !important; 
+            letter-spacing: -2px !important; 
             color: #000000 !important;
             text-transform: uppercase;
             text-align: center;
@@ -187,8 +187,9 @@ def render_styles():
 
         /* Metric Styling */
         .stMetric { 
-            border-left: 1px solid #000 !important; 
-            padding-left: 15px !important; 
+            border: 1px solid #EEEEEE !important; 
+            padding: 20px !important; 
+            border-radius: 0px !important;
         }
 
         /* Input Felder: SHARP & MINIMAL */
@@ -202,8 +203,8 @@ def render_styles():
 
         /* Sidebar Fixes */
         [data-testid="stSidebar"] {
-            background-color: #FFFFFF !important;
-            border-right: 1px solid #EEEEEE !important;
+            background-color: #F8F8F8 !important;
+            border-right: 1px solid #000000 !important;
         }
 
         [data-testid="stSidebar"] h1 {
@@ -443,7 +444,7 @@ def render_dashboard_layout():
         factory.render_factory(supabase)
 
 def render_dashboard(supabase):
-    st.title("ANTIGRAVITY DECK")
+    st.title("CONTENT CORE / ENGINE")
     user_id = st.session_state.get('user_email', 'unknown')
 
     try:
@@ -472,34 +473,41 @@ def render_dashboard(supabase):
                 .execute()
 
             if latest_stats.data:
-                s = latest_stats.data[0]
+                latest = latest_stats.data[0]
                 
-                # Metriken (3 Spalten wie im Snippet)
-                c1, c2, c3 = st.columns(3)
-                c1.metric("FOLLOWERS", f"{int(s['followers']):,}")
-                c2.metric("ENGAGEMENT", f"{float(s['engagement_rate']):.2%}")
-                c3.metric("CORE SCORE", f"{float(s['quality_score']):.1f}")
+                # KPI GRID (4 Spalten)
+                col1, col2, col3, col4 = st.columns(4)
+                col1.metric("FOLLOWERS", f"{int(latest['followers']):,}")
+                col2.metric("ENGAGEMENT", f"{float(latest['engagement_rate']):.2%}")
+                col3.metric("CORE SCORE", f"{float(latest['quality_score']):.1f}")
+                col4.metric("REACH INDEX", f"{int(latest['followers'] * 0.12):,}") # Kalkulierter Wert
 
-                st.markdown("### FOLLOWER TREND")
-                # Chart (Verlauf aus allen Einträgen)
-                all_res = supabase.table("stats_history")\
-                    .select("created_at", "followers")\
+                # ANALYTICS GRAPH
+                st.markdown("### GROWTH TRAJECTORY")
+                # Verlauf aus den letzten 10 Einträgen
+                history_query = supabase.table("stats_history")\
+                    .select("*")\
                     .eq("user_id", user_id)\
-                    .order("created_at")\
+                    .order("created_at", desc=True)\
+                    .limit(10)\
                     .execute()
                 
-                if len(all_res.data) > 1:
-                    df = pd.DataFrame(all_res.data)
+                if history_query.data:
+                    df = pd.DataFrame(history_query.data)
                     df['created_at'] = pd.to_datetime(df['created_at'])
-                    st.line_chart(df.set_index("created_at")["followers"])
+                    # Wir drehen das DF um, damit der Trend von alt nach neu geht
+                    st.line_chart(df.sort_values("created_at").set_index("created_at")["followers"])
+                    
+                    # RAW DATA TABELLE
+                    with st.expander("VIEW RAW SYSTEM DATA"):
+                        st.table(df[["created_at", "handle", "followers", "quality_score"]])
                 else:
-                    st.info("Keine Daten im Core. Nutze die Sidebar für den ersten Sync.")
+                    st.info("KEINE DATEN IM CORE. NUTZE DIE SIDEBAR FÜR DEN ERSTEN SYNC.")
                 
                 st.markdown("---")
                 st.markdown(f"**LOGGED AS:** {user_id} | **STATUS:** CORE ACTIVE")
     except Exception as e:
-        st.error(f"DATABASE ERROR: {e}")
-        st.info("Hinweis: Prüfe, ob die Tabelle 'stats_history' existiert.")
+        st.error(f"ENGINE CRITICAL ERROR: {e}")
 
 # --- MAIN ORCHESTRATION ---
 def main():
