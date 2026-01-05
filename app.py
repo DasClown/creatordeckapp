@@ -188,8 +188,10 @@ def render_styles():
 
 # --- LANDING PAGE ---
 def render_landing_page():
-    # Zentrales Logo (Punkt mit Kreisen)
-    st.markdown("<div style='text-align: center; padding: 50px;'>●</div>", unsafe_allow_html=True)
+    # Zentrales Logo
+    c1, c2, c3 = st.columns([2, 1, 2])
+    with c2:
+        st.image("assets/logo_symbol.jpg", use_container_width=True)
     
     st.markdown("<h1>CONTENT CORE</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #666;'>SYSTEM INITIALIZATION</p>", unsafe_allow_html=True)
@@ -262,7 +264,10 @@ def render_landing_page():
 
 # --- VIEW MANAGEMENT & AUTH ---
 def render_auth_interface():
-    st.markdown("<h1 style='text-align: center; margin-bottom: 40px;'>CONTENT CORE</h1>", unsafe_allow_html=True)
+    c1, c2, c3 = st.columns([1, 2, 1])
+    with c2:
+        st.image("assets/logo_full.jpg", use_container_width=True)
+    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
     
     auth_tab1, auth_tab2 = st.tabs(["REGISTRIERUNG", "LOGIN"])
     
@@ -350,7 +355,8 @@ def render_viral_share():
 # --- DASHBOARD & NAVIGATION ---
 def render_dashboard_layout():
     with st.sidebar:
-        st.markdown("<h1 style='letter-spacing: -1px;'>CONTENT CORE</h1>", unsafe_allow_html=True)
+        st.image("assets/logo_full.jpg", use_container_width=True)
+        st.markdown("<div style='margin-top: -20px;'></div>", unsafe_allow_html=True)
         st.info("🚀 ALPHA ACCESS: FREE FOREVER")
         page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "DEMO"])
         
