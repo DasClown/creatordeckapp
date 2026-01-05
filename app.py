@@ -7,6 +7,7 @@ from modules import crm, finance, planner, factory, gallery, channels, deals, de
 import pandas as pd
 import google.generativeai as genai
 from supabase import create_client
+import resend
 
 # --- HELPER FUNCTIONS ---
 def init_supabase():
@@ -33,6 +34,29 @@ def init_supabase():
     except Exception as e:
         st.error(f"🔧 Interner Fehler bei Supabase-Initialisierung: {e}")
         return None
+
+def send_verification_email(email, confirmation_url):
+    """Send verification email via Resend"""
+    try:
+        resend.api_key = st.secrets.get("RESEND_API_KEY", "re_P9igZ7ze_L3JmWkdRe3KEJWW9FBpTP6aT")
+        
+        r = resend.Emails.send({
+            "from": "CREATOR.FANS <onboarding@resend.dev>",
+            "to": email,
+            "subject": "Verifiziere deinen Zugang zu CREATOR.FANS",
+            "html": f"""
+                <div style='font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee;'>
+                    <h2 style='font-weight: 300;'>Willkommen bei CREATOR.FANS</h2>
+                    <p>Klicke auf den folgenden Link, um deine E-Mail zu bestätigen und dein Terminal freizuschalten:</p>
+                    <a href='{confirmation_url}' style='display: inline-block; padding: 10px 20px; background-color: #000; color: #fff; text-decoration: none; margin: 20px 0;'>ZUGANG VERIFIZIEREN</a>
+                    <p style='color: #666; font-size: 12px;'>Falls du dich nicht registriert hast, kannst du diese Mail ignorieren.</p>
+                </div>
+            """
+        })
+        return True
+    except Exception as e:
+        st.error(f"Fehler beim Senden der Mail: {e}")
+        return False
 
 # --- SETUP ---
 st.set_page_config(
@@ -184,8 +208,13 @@ def render_landing_page():
                             # 2. Bestätigungs-Link generieren
                             confirmation_url = f"https://creatordeckapp.streamlit.app/?verify={email}"
                             
-                            st.success(f"✅ Bestätigungs-Link wurde an {email} gesendet.")
-                            st.info(f"🚀 ALPHA DEBUG: Klicke hier zum Bestätigen: {confirmation_url}")
+                            # 3. E-Mail versenden via Resend
+                            if send_verification_email(email, confirmation_url):
+                                st.success(f"✅ Bestätigungs-Link wurde an {email} gesendet.")
+                            else:
+                                st.warning("⚠️ E-Mail konnte nicht gesendet werden, aber dein Eintrag wurde gespeichert.")
+                            
+                            st.info("🚀 Bitte prüfe dein Postfach (auch Spam).")
                     except Exception as e:
                         st.error(f"Fehler beim Speichern: {str(e)}")
                         st.info("💡 Tipp: Falls es ein Verbindungsfehler ist, prüfe deine SUPABASE_URL in den Secrets. Prüfe auch, ob RLS für die 'waitlist' Tabelle deaktiviert ist.")
