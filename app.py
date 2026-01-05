@@ -11,41 +11,61 @@ from supabase import create_client
 # --- SETUP ---
 st.set_page_config(page_title="CreatorOS", layout="wide", page_icon="⚫")
 
-# --- CSS STYLING (WHITE & CLEAN) ---
+# --- CSS STYLING (RADICAL MINIMALISM) ---
 st.markdown("""
 <style>
+    /* Google Font: Inter */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-    
-    /* Hintergrund und Grundschrift */
+
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
-        background-color: #ffffff;
-        color: #1a1a1a;
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
     }
 
-    /* Sidebar Styling */
+    /* Radikaler Minimalismus: Keine Schatten, nur 1px Linien */
     [data-testid="stSidebar"] {
-        background-color: #f8f9fa;
-        border-right: 1px solid #eeeeee;
+        background-color: #FFFFFF !important;
+        border-right: 1px solid #E0E0E0 !important;
     }
-    
-    /* Buttons */
+
+    /* Card-Ersatz: Flache Boxen */
+    .stMetric, .ai-box, .custom-card {
+        background-color: #FFFFFF !important;
+        border: 1px solid #E0E0E0 !important;
+        border-radius: 0px !important; /* Harte Kanten für edlen Look */
+        padding: 20px !important;
+        box-shadow: none !important;
+    }
+
+    /* Buttons: Black & White */
     .stButton > button {
-        background-color: #ffffff;
-        color: #1a1a1a;
-        border: 1px solid #dddddd;
-        border-radius: 8px;
-        transition: all 0.2s ease;
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
+        border-radius: 0px !important;
+        border: 1px solid #000000 !important;
+        font-weight: 600 !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
     }
     .stButton > button:hover {
-        border-color: #000000;
-        background-color: #f8f9fa;
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
+
+    /* Inputs */
+    .stTextInput > div > div > input, .stTextArea > div > div > textarea {
+        border-radius: 0px !important;
+        border: 1px solid #E0E0E0 !important;
+        background-color: #FFFFFF !important;
     }
 
     /* Metriken */
     [data-testid="stMetricValue"] {
+        font-weight: 300 !important;
+        letter-spacing: -1px;
         font-size: 2.5rem !important;
-        font-weight: 600 !important;
         color: #000000 !important;
     }
     
@@ -78,22 +98,6 @@ st.markdown("""
     .stTabs [aria-selected="true"] {
         color: #000000 !important;
         border-bottom: 2px solid #000000 !important;
-    }
-
-    /* Input Felder */
-    .stTextInput > div > div > input {
-        background-color: #ffffff;
-        border: 1px solid #eeeeee;
-        border-radius: 8px;
-    }
-    
-    /* Karten-Effekt für Boxen */
-    .ai-box, .custom-card {
-        background-color: #fdfdfd;
-        border: 1px solid #eeeeee;
-        padding: 24px;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
     }
 </style>
 """, unsafe_allow_html=True)
