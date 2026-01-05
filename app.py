@@ -113,40 +113,57 @@ st.markdown("""
 
 # --- LANDING PAGE ---
 def render_landing_page():
-    # Hero Section
     st.markdown("""
-        <div style='padding: 100px 20px; text-align: center;'>
-            <h1 style='font-size: 72px; font-weight: 300; letter-spacing: -2px; margin-bottom: 10px;'>
-                CREATOR OS
-            </h1>
-            <p style='font-size: 20px; color: #666; font-weight: 300; margin-bottom: 40px;'>
-                The Intelligence Layer for High-Scale Creators.
+        <div style='padding: 80px 20px; text-align: center;'>
+            <h1 style='font-size: 64px; font-weight: 300; letter-spacing: -2px;'>CREATOR.TECH</h1>
+            <p style='font-size: 18px; color: #666; font-weight: 300; max-width: 600px; margin: 0 auto 40px auto;'>
+                The Intelligence Layer for High-Scale Creators. <br>
+                Aktuell im Private-Beta-Modus.
             </p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Value Propositions (3 Spalten)
-    col1, col2, col3 = st.columns(3)
-    
+    col1, col2 = st.columns([1, 1])
+
     with col1:
-        st.markdown("### 01 ANALYZE")
-        st.caption("Echtzeit-Performance-Tracking über alle Plattformen hinweg. Automatisierte Daten-Snapshots jede Nacht.")
-
+        st.markdown("### JOIN THE WAITLIST")
+        email = st.text_input("Deine E-Mail", placeholder="name@domain.com")
+        if st.button("BEWERBEN"):
+            if email:
+                # Supabase initialisieren
+                supabase = init_supabase()
+                if supabase:
+                    try:
+                        supabase.table("waitlist").insert({"email": email}).execute()
+                        st.success("✅ Auf die Warteliste gesetzt.")
+                    except:
+                        st.error("Fehler beim Speichern. Bitte versuche es später erneut.")
+                else:
+                    st.warning("Waitlist aktuell nicht verfügbar.")
+            else:
+                st.warning("Bitte E-Mail eingeben.")
+    
     with col2:
-        st.markdown("### 02 GENERATE")
-        st.caption("AI-Factory, die deinen Erfolg versteht. Captions und Hooks basierend auf deinen Top-Inhalten.")
-
-    with col3:
-        st.markdown("### 03 SCALE")
-        st.caption("Deals, Cashflow und Redaktionsplan in einer einzigen, sauberen Oberfläche.")
+        st.markdown("### CONNECT & NETWORK")
+        st.write("Für Partnerschaften oder direkten Zugang kontaktiere mich über:")
+        
+        # Stilvolle Black-Buttons für Socials
+        st.markdown("""
+            <a href='https://reddit.com/u/YourUser' target='_blank' style='text-decoration:none;'>
+                <div style='padding:10px; border:1px solid #000; color:#000; text-align:center; margin-bottom:10px; transition: all 0.3s;'>REDDIT</div>
+            </a>
+            <a href='https://instagram.com/YourUser' target='_blank' style='text-decoration:none;'>
+                <div style='padding:10px; border:1px solid #000; color:#000; text-align:center;'>INSTAGRAM</div>
+            </a>
+        """, unsafe_allow_html=True)
 
     st.divider()
-
-    # Login / Access Trigger
+    
+    # Admin Access (versteckt)
     c1, c2, c3 = st.columns([1,2,1])
     with c2:
         st.markdown("<div style='text-align: center; margin-top: 50px;'>", unsafe_allow_html=True)
-        if st.button("ENTER TERMINAL"):
+        if st.button("ENTER TERMINAL", key="admin_access"):
             st.session_state.view = "login"
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
