@@ -191,11 +191,9 @@ elif page == "FACTORY":
     # Gemini API konfigurieren
     genai.configure(api_key=st.secrets.get("GEMINI_API_KEY"))
     
-    # Prüfen ob Post-Daten im Session State vorhanden sind
-    if 'df_posts' in st.session_state and not st.session_state.df_posts.empty:
-        factory.render_factory(st.session_state.df_posts)
+    # Supabase für Performance-Daten
+    supabase = init_supabase()
+    if supabase:
+        factory.render_factory(supabase)
     else:
-        # Fallback auf Demo-Daten
-        st.info("💡 Tipp: Lade zuerst das Dashboard, um echte Instagram-Daten zu verwenden.")
-        df_history = get_demo_data()
-        factory.render_factory(df_history)
+        st.error("⚠️ Supabase nicht konfiguriert. Factory benötigt Zugriff auf Performance-Daten.")
