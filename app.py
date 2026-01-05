@@ -3,7 +3,7 @@ import toml
 import os
 
 # Module importieren
-from modules import crm, finance, planner, factory
+from modules import crm, finance, planner, factory, gallery
 import pandas as pd
 import google.generativeai as genai
 
@@ -26,7 +26,7 @@ if not st.session_state.password_correct:
 # --- NAVIGATION ---
 with st.sidebar:
     st.title("CreatorOS")
-    page = st.radio("NAVIGATION", ["DASHBOARD", "FACTORY", "CRM", "FINANCE", "PLANNER"])
+    page = st.radio("NAVIGATION", ["DASHBOARD", "FACTORY", "GALLERY", "CRM", "FINANCE", "PLANNER"])
     st.divider()
     if st.button("LOGOUT"):
         st.session_state.password_correct = False
@@ -43,6 +43,9 @@ def get_demo_data():
 if page == "DASHBOARD":
     st.title("ANTIGRAVITY DECK 🚀")
     st.write("Dashboard Logik hier...") # Hier den alten Dashboard Code einfügen
+
+elif page == "GALLERY":
+    gallery.render_gallery()
 
 elif page == "CRM":
     crm.render_crm()
