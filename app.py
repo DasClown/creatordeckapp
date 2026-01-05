@@ -1,43 +1,37 @@
 import streamlit as st
-import requests
-import toml
-import os
 
-# Module importieren
-from modules import crm, finance, planner, factory, gallery, channels, deals, demo
-import pandas as pd
-import google.generativeai as genai
-from supabase import create_client
-import resend
+# --- 1. BOOT VERIFICATION (FAIL-SAFE) ---
+required_secrets = ["SUPABASE_URL", "SUPABASE_KEY", "RAPIDAPI_KEY", "RESEND_API_KEY"]
+missing = [s for s in required_secrets if s not in st.secrets]
 
-# API Key direkt aus den Secrets laden
-resend.api_key = st.secrets.get("RESEND_API_KEY", "re_P9igZ7ze_L3JmWkdRe3KEJWW9FBpTP6aT")
+if missing:
+    st.error(f"KRITISCHER FEHLER: Fehlende Secrets: {missing}")
+    st.stop()
 
-# --- HELPER FUNCTIONS ---
+# --- 2. CORE IMPORTS (DEFERRED) ---
+try:
+    import requests
+    import toml
+    import os
+    import pandas as pd
+    import google.generativeai as genai
+    from supabase import create_client
+    import resend
+    
+    # Module importieren
+    from modules import crm, finance, planner, factory, gallery, channels, deals, demo
+    
+    # Global Clients
+    supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+    resend.api_key = st.secrets["RESEND_API_KEY"]
+except Exception as e:
+    st.error(f"BOOT ERROR: {e}")
+    st.stop()
+
+# --- 3. HELPER FUNCTIONS ---
 def init_supabase():
-    """Initialize Supabase client with validation"""
-    try:
-        url = st.secrets.get("SUPABASE_URL")
-        key = st.secrets.get("SUPABASE_KEY")
-        
-        if not url or not key:
-            return None
-            
-        # Cleanup and Validation
-        url = url.strip().rstrip("/")
-        
-        if not url.startswith("https://"):
-            st.error("SUPABASE_URL muss mit 'https://' beginnen.")
-            return None
-        
-        if ".supabase.co" not in url:
-            st.error("SUPABASE_URL scheint kein gültiger Supabase-Endpunkt zu sein.")
-            return None
-
-        return create_client(url, key)
-    except Exception as e:
-        st.error(f"Interner Fehler bei Supabase-Initialisierung: {e}")
-        return None
+    """Initialisierte Supabase-Instanz zurückgeben"""
+    return supabase
 
 def send_verification_email(email):
     # WICHTIG: Im Sandbox-Modus darf NUR an deine eigene E-Mail gesendet werden.
