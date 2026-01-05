@@ -3,7 +3,9 @@ import toml
 import os
 
 # Module importieren
-from modules import crm, finance, planner
+from modules import crm, finance, planner, factory
+import pandas as pd
+import google.generativeai as genai
 
 # --- SETUP ---
 st.set_page_config(page_title="CreatorOS", layout="wide", page_icon="⚫")
@@ -24,11 +26,18 @@ if not st.session_state.password_correct:
 # --- NAVIGATION ---
 with st.sidebar:
     st.title("CreatorOS")
-    page = st.radio("NAVIGATION", ["DASHBOARD", "CRM", "FINANCE", "PLANNER"])
+    page = st.radio("NAVIGATION", ["DASHBOARD", "CRM", "FINANCE", "PLANNER", "FACTORY"])
     st.divider()
     if st.button("LOGOUT"):
         st.session_state.password_correct = False
         st.rerun()
+
+# --- DEMO DATA (für Factory) ---
+def get_demo_data():
+    return pd.DataFrame({
+        'Caption': ['Top Post 1', 'Top Post 2', 'Top Post 3'],
+        'Engagement': [450, 380, 320]
+    })
 
 # --- ROUTING ---
 if page == "DASHBOARD":
@@ -43,3 +52,9 @@ elif page == "FINANCE":
 
 elif page == "PLANNER":
     planner.render_planner()
+
+elif page == "FACTORY":
+    # Gemini API konfigurieren
+    genai.configure(api_key=st.secrets.get("GEMINI_API_KEY"))
+    df_history = get_demo_data()
+    factory.render_factory(df_history)
