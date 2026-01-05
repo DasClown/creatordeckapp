@@ -5,5 +5,5 @@ toml==0.10.2
 plotly==6.5.0
 supabase==2.27.0
 google-generativeai==0.8.6
-resend==1.0.0
+resend
 Pillow==11.0.0
