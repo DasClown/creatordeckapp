@@ -197,10 +197,19 @@ def render_landing_page():
                 supabase = init_supabase()
                 if supabase:
                     try:
-                        # Check if email already exists
-                        existing = supabase.table("waitlist").select("email").eq("email", email).execute()
+                        # Check if email already exists and its confirm status
+                        existing = supabase.table("waitlist").select("email, is_confirmed").eq("email", email).execute()
                         if existing.data and len(existing.data) > 0:
-                            st.info("ℹ️ Du bist bereits auf der Warteliste!")
+                            is_conf = existing.data[0].get("is_confirmed", False)
+                            if is_conf:
+                                st.info("ℹ️ Du bist bereits verifiziert! Klicke unten auf 'ENTER TERMINAL' zum Login.")
+                            else:
+                                st.warning("ℹ️ Du bist bereits auf der Warteliste, aber noch nicht bestätigt.")
+                                if st.button("BESTÄTIGUNGS-LINK ERNEUT SENDEN", key="resend_landing"):
+                                    c_url = f"https://www.creator.fans/?verify={email}"
+                                    if send_verification_email(email, c_url):
+                                        st.success(f"✅ Link erneut an {email} gesendet.")
+                                        st.info(f"DEBUG LINK: {c_url}")
                         else:
                             # 1. In DB speichern (is_confirmed ist default false)
                             supabase.table("waitlist").insert({"email": email}).execute()
@@ -300,10 +309,19 @@ if not st.session_state.password_correct:
                 supabase = init_supabase()
                 if supabase:
                     try:
-                        # Check existenz
-                        existing = supabase.table("waitlist").select("email").eq("email", new_email).execute()
+                        # Check existenz und confirm status
+                        existing = supabase.table("waitlist").select("email, is_confirmed").eq("email", new_email).execute()
                         if existing.data and len(existing.data) > 0:
-                            st.info("ℹ️ Du bist bereits auf der Warteliste!")
+                            is_conf = existing.data[0].get("is_confirmed", False)
+                            if is_conf:
+                                st.info("ℹ️ Du bist bereits verifiziert! Nutze den LOGIN Tab.")
+                            else:
+                                st.warning("ℹ️ Du bist bereits auf der Warteliste, aber noch nicht bestätigt.")
+                                if st.button("BESTÄTIGUNGS-LINK ERNEUT SENDEN"):
+                                    conf_url = f"https://www.creator.fans/?verify={new_email}"
+                                    if send_verification_email(new_email, conf_url):
+                                        st.success(f"✅ Link erneut an {new_email} gesendet.")
+                                        st.info(f"DEBUG LINK: {conf_url}")
                         else:
                             # In DB speichern
                             supabase.table("waitlist").insert({"email": new_email, "is_confirmed": False}).execute()
