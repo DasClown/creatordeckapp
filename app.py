@@ -287,6 +287,19 @@ with st.sidebar:
             st.rerun()
         st.color_picker("Brand Color", "#ffffff")
     
+    # Help & Support Section
+    st.markdown("---")
+    st.markdown("### 📟 Support & Docs")
+    st.caption("Lerne, wie du deine Daten korrekt exportierst und hier importierst.")
+    
+    if st.button("📺 Video Tutorial", use_container_width=True):
+        st.info("Tutorial-Video wird in Kürze verfügbar sein!")
+    
+    if st.button("📖 Documentation", use_container_width=True):
+        st.info("Dokumentation wird in Kürze verfügbar sein!")
+    
+    st.caption("💬 Support: contact@creator.fans")
+    
     st.divider()
     if st.button("LOGOUT"):
         st.session_state.password_correct = False
