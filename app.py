@@ -178,8 +178,14 @@ def render_landing_page():
                         if existing.data and len(existing.data) > 0:
                             st.info("ℹ️ Du bist bereits auf der Warteliste!")
                         else:
+                            # 1. In DB speichern (is_confirmed ist default false)
                             supabase.table("waitlist").insert({"email": email}).execute()
-                            st.success("✅ Auf die Warteliste gesetzt.")
+                            
+                            # 2. Bestätigungs-Link generieren
+                            confirmation_url = f"https://creatordeckapp.streamlit.app/?verify={email}"
+                            
+                            st.success(f"✅ Bestätigungs-Link wurde an {email} gesendet.")
+                            st.info(f"🚀 ALPHA DEBUG: Klicke hier zum Bestätigen: {confirmation_url}")
                     except Exception as e:
                         st.error(f"Fehler beim Speichern: {str(e)}")
                         st.info("💡 Tipp: Falls es ein Verbindungsfehler ist, prüfe deine SUPABASE_URL in den Secrets. Prüfe auch, ob RLS für die 'waitlist' Tabelle deaktiviert ist.")
@@ -230,6 +236,19 @@ if "view" not in st.session_state:
     st.session_state.view = "landing"
 if "password_correct" not in st.session_state:
     st.session_state.password_correct = False
+
+# --- EMAIL VERIFICATION HANDLER ---
+if "verify" in st.query_params:
+    verify_email = st.query_params["verify"]
+    supabase = init_supabase()
+    if supabase:
+        try:
+            # Wir setzen is_confirmed auf true (Spalte muss in DB existieren)
+            supabase.table("waitlist").update({"is_confirmed": True}).eq("email", verify_email).execute()
+            st.success(f"🎉 Danke! Deine E-Mail {verify_email} wurde erfolgreich bestätigt.")
+            # Parameter entfernen um Doppelklicks zu vermeiden (Optional in Streamlit)
+        except Exception as e:
+            st.error(f"Verifizierungs-Fehler: {e}")
 
 # Landing Page
 if st.session_state.view == "landing":
