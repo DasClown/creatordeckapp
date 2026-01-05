@@ -172,6 +172,8 @@ if not st.session_state.password_correct:
     st.stop()
 
 # --- NAVIGATION ---
+CREATOR_DISPLAY_NAME = st.secrets.get("BRAND_NAME", "Admin")
+
 with st.sidebar:
     st.markdown("<h1 style='letter-spacing: -1px;'>CREATOR.TECH</h1>", unsafe_allow_html=True)
     page = st.radio("NAVIGATION", [
@@ -179,7 +181,7 @@ with st.sidebar:
     ])
     
     with st.expander("⚙️ SETTINGS"):
-        st.caption("Connected: @user")
+        st.caption(f"Connected: {CREATOR_DISPLAY_NAME}")
         if st.button("Sync APIs"):
             st.rerun()
         st.color_picker("Brand Color", "#ffffff")
