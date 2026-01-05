@@ -18,7 +18,9 @@ def init_supabase():
         if not url or not key:
             return None
             
-        # URL Validation
+        # Cleanup and Validation
+        url = url.strip().rstrip("/")
+        
         if not url.startswith("https://"):
             st.error("🚫 SUPABASE_URL muss mit 'https://' beginnen.")
             return None
