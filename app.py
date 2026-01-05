@@ -26,7 +26,16 @@ if not st.session_state.password_correct:
 # --- NAVIGATION ---
 with st.sidebar:
     st.title("CreatorOS")
-    page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "DEALS", "CRM", "FINANCE", "PLANNER"])
+    page = st.radio("NAVIGATION", [
+        "DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER"
+    ])
+    
+    with st.expander("⚙️ SETTINGS"):
+        st.caption("Connected: @user")
+        if st.button("Sync APIs"):
+            st.rerun()
+        st.color_picker("Brand Color", "#ffffff")
+    
     st.divider()
     if st.button("LOGOUT"):
         st.session_state.password_correct = False
