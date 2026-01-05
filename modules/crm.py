@@ -30,4 +30,27 @@ def render_crm(supabase):
                 supabase.table("deals").update(deal_data).eq("id", row["id"]).execute()
             else:
                 supabase.table("deals").insert(deal_data).execute()
+            
+            # Automatischer Finance-Sync für geschlossene Deals
+            if row["status"] == "Closed":
+                # Prüfen, ob bereits eine Transaktion für diesen Deal existiert (Double-Entry Schutz)
+                check = supabase.table("transactions").select("id").eq("description", f"Deal: {row['brand']}").execute()
+                
+                if not check.data:
+                    # Wert als Float konvertieren (entfernt € und Kommas)
+                    try:
+                        amount = float(str(row["value"]).replace("€", "").replace(".", "").replace(",", ".").strip())
+                    except:
+                        amount = 0
+                    
+                    supabase.table("transactions").insert({
+                        "type": "Income",
+                        "amount": amount,
+                        "category": "Brand Deal",
+                        "description": f"Deal: {row['brand']}",
+                        "date": str(row["deadline"])
+                    }).execute()
+                    st.toast(f"💰 Finance: {row['brand']} als Einnahme verbucht!")
+        
         st.success("Daten synchronisiert.")
+
