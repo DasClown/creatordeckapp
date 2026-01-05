@@ -463,10 +463,20 @@ def render_dashboard(supabase):
                         supabase.table("stats_history").insert({"platform": "instagram", "metric": "followers", "value": followers, "user_id": user_id}).execute()
                         st.rerun()
         else:
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Reach", "125.400", "+8.2%")
-            c2.metric("Engagement", "12.300", "-1.5%")
-            c3.metric("Followers", "45.120", "+0.4%")
+            # Holen der neuesten Daten
+            latest_stats = supabase.table("stats_history")\
+                .select("*")\
+                .eq("user_id", user_id)\
+                .order("created_at", desc=True)\
+                .limit(1)\
+                .execute()
+
+            if latest_stats.data:
+                s = latest_stats.data[0]
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Follower", f"{s.get('followers', 0):,}")
+                col2.metric("ER", f"{s.get('engagement_rate', 0):.2%}")
+                col3.metric("Score", f"{s.get('quality_score', 0):.1f}/100")
     except Exception as e:
         st.error(f"Datenbank-Fehler: {e}")
         st.info("Hinweis: Stelle sicher, dass die Tabelle 'stats_history' in Supabase existiert.")
