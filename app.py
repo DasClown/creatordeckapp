@@ -9,7 +9,7 @@ import google.generativeai as genai
 import plotly.express as px
 
 # Module importieren
-from modules import crm
+from modules import crm, finance
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="CreatorOS", layout="wide", page_icon="⚫")
@@ -62,8 +62,7 @@ elif page == "CRM":
     crm.render_crm()
 
 elif page == "FINANCE":
-    st.title("💰 FINANCE")
-    st.write("Finance Module coming soon.")
+    finance.render_finance()
 
 elif page == "PLANNER":
     st.title("📅 CONTENT PLANNER")
