@@ -121,7 +121,6 @@ def render_instagram_sync(supabase):
 # --- SETUP ---
 st.set_page_config(
     page_title="CONTENT CORE",
-    page_icon="●",
     layout="wide"
 )
 
