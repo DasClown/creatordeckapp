@@ -6,6 +6,7 @@ from supabase import create_client
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 INSTAGRAM_TOKEN = os.environ.get("INSTAGRAM_TOKEN")
+USER_ID = os.environ.get("USER_ID", "default")  # Optional: für Multi-User Support
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -20,9 +21,10 @@ def sync_instagram():
     supabase.table("stats_history").insert({
         "platform": "instagram",
         "metric": "followers",
-        "value": followers
+        "value": followers,
+        "user_id": USER_ID  # Dynamische User-ID für Multi-User Support
     }).execute()
-    print(f"Synced {followers} followers.")
+    print(f"Synced {followers} followers for user {USER_ID}.")
 
 if __name__ == "__main__":
     sync_instagram()
