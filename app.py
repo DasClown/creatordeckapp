@@ -135,7 +135,14 @@ def get_demo_data():
 # --- ROUTING ---
 if page == "DASHBOARD":
     st.title("ANTIGRAVITY DECK 🚀")
-    st.write("Dashboard Logik hier...") # Hier den alten Dashboard Code einfügen
+    
+    # Metriken
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Reach", "125.400", "+8.2%")
+    c2.metric("Engagement", "12.300", "-1.5%")
+    c3.metric("Followers", "45.120", "+0.4%")
+    
+    st.info("💡 Dashboard-Logik wird hier integriert (Instagram API, Analytics, etc.)")
 
 elif page == "GALLERY":
     gallery.render_gallery()
