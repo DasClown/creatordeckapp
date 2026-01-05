@@ -26,7 +26,7 @@ if not st.session_state.password_correct:
 # --- NAVIGATION ---
 with st.sidebar:
     st.title("CreatorOS")
-    page = st.radio("NAVIGATION", ["DASHBOARD", "CRM", "FINANCE", "PLANNER", "FACTORY"])
+    page = st.radio("NAVIGATION", ["DASHBOARD", "FACTORY", "CRM", "FINANCE", "PLANNER"])
     st.divider()
     if st.button("LOGOUT"):
         st.session_state.password_correct = False
@@ -56,5 +56,12 @@ elif page == "PLANNER":
 elif page == "FACTORY":
     # Gemini API konfigurieren
     genai.configure(api_key=st.secrets.get("GEMINI_API_KEY"))
-    df_history = get_demo_data()
-    factory.render_factory(df_history)
+    
+    # Prüfen ob Post-Daten im Session State vorhanden sind
+    if 'df_posts' in st.session_state and not st.session_state.df_posts.empty:
+        factory.render_factory(st.session_state.df_posts)
+    else:
+        # Fallback auf Demo-Daten
+        st.info("💡 Tipp: Lade zuerst das Dashboard, um echte Instagram-Daten zu verwenden.")
+        df_history = get_demo_data()
+        factory.render_factory(df_history)
