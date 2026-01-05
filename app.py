@@ -20,6 +20,19 @@ st.markdown("""
     <script src="https://cdn.usefathom.com/script.js" data-site="YOUR_ID" defer></script>
 """, unsafe_allow_html=True)
 
+# --- SEO & META TAGS ---
+st.markdown("""
+    <head>
+        <title>CREATOR.TECH | The Intelligence Layer for Creators</title>
+        <meta name="description" content="Automatisierte Analyse, AI-Content-Strategie und Finanz-Kontrolle für High-Scale Creator. Jetzt Zugang zur Private Beta anfordern.">
+        <meta name="keywords" content="Creator Management, Influencer Tool, Content Strategy AI, Creator CRM, Finance for Creators">
+        <meta property="og:title" content="CREATOR.TECH">
+        <meta property="og:description" content="Das Betriebssystem für dein Creator-Business.">
+        <meta property="og:type" content="website">
+        <meta name="robots" content="index, follow">
+    </head>
+""", unsafe_allow_html=True)
+
 # --- CSS STYLING (RADICAL MINIMALISM) ---
 st.markdown("""
 <style>
