@@ -171,7 +171,11 @@ elif page == "CRM":
         st.error("⚠️ Supabase nicht konfiguriert. Bitte SUPABASE_URL und SUPABASE_KEY in secrets.toml hinzufügen.")
 
 elif page == "FINANCE":
-    finance.render_finance()
+    supabase = init_supabase()
+    if supabase:
+        finance.render_finance(supabase)
+    else:
+        st.error("⚠️ Supabase nicht konfiguriert. Bitte SUPABASE_URL und SUPABASE_KEY in secrets.toml hinzufügen.")
 
 elif page == "PLANNER":
     planner.render_planner()
