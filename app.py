@@ -9,7 +9,11 @@ import google.generativeai as genai
 from supabase import create_client
 
 # --- SETUP ---
-st.set_page_config(page_title="CreatorOS", layout="wide", page_icon="⚫")
+st.set_page_config(
+    page_title="CREATOR.TECH",
+    page_icon="🚀",
+    layout="wide"
+)
 
 # --- ANALYTICS ---
 st.markdown("""
@@ -169,7 +173,7 @@ if not st.session_state.password_correct:
 
 # --- NAVIGATION ---
 with st.sidebar:
-    st.title("CreatorOS")
+    st.markdown("<h1 style='letter-spacing: -1px;'>CREATOR.TECH</h1>", unsafe_allow_html=True)
     page = st.radio("NAVIGATION", [
         "DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "DEMO"
     ])
