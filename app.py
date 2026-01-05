@@ -186,11 +186,11 @@ def render_landing_page():
     
     # Trust & Privacy Badge
     st.markdown("""
-        <div style='background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;'>
-            <h4 style='margin: 0 0 10px 0; font-weight: 500;'>🔒 Data Privacy</h4>
-            <p style='margin: 0; color: #666; font-size: 14px; line-height: 1.6;'>
+        <div style='background: #ffffff; padding: 20px; border: 1px solid #e0e0e0; margin: 20px 0;'>
+            <h4 style='margin: 0 0 10px 0; font-weight: 300; font-size: 16px; color: #000000;'>🔒 Data Privacy</h4>
+            <p style='margin: 0; color: #666; font-size: 14px; line-height: 1.6; font-weight: 300;'>
                 Deine Daten werden verschlüsselt in einer dedizierten Supabase-Instanz gespeichert. 
-                Wir haben <strong>keinen Zugriff</strong> auf deine Passwörter; die Verbindung erfolgt über 
+                Wir haben <strong style='font-weight: 500;'>keinen Zugriff</strong> auf deine Passwörter; die Verbindung erfolgt über 
                 öffentliche Schnittstellen oder manuellen Import.
             </p>
         </div>
@@ -233,13 +233,13 @@ if not st.session_state.full_access:
     st.markdown("""
         <div style='padding: 60px 20px; text-align: center;'>
             <h2 style='font-weight: 300; margin-bottom: 20px;'>🔓 ACTIVATE FULL ENGINE</h2>
-            <p style='color: #666; margin-bottom: 30px;'>
+            <p style='color: #666; margin-bottom: 30px; font-weight: 300;'>
                 Teile CREATOR.FANS auf Social Media und erhalte sofortigen Vollzugriff.<br>
                 Kostenlos. Für immer.
             </p>
-            <div style='background: #f0f9ff; padding: 15px; border-radius: 8px; margin: 20px auto; max-width: 600px;'>
-                <p style='margin: 0; font-size: 14px; color: #0369a1;'>
-                    🔒 <strong>Privacy First:</strong> Deine Daten bleiben verschlüsselt in deiner Supabase-Instanz. 
+            <div style='background: #ffffff; padding: 15px; border: 1px solid #e0e0e0; margin: 20px auto; max-width: 600px;'>
+                <p style='margin: 0; font-size: 14px; color: #666; font-weight: 300;'>
+                    🔒 <strong style='font-weight: 500;'>Privacy First:</strong> Deine Daten bleiben verschlüsselt in deiner Supabase-Instanz. 
                     Zero-Knowledge Architecture.
                 </p>
             </div>
