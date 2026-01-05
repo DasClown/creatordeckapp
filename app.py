@@ -48,6 +48,21 @@ st.markdown("""
         color: #000000 !important;
     }
     
+    /* Akzentuierte Metriken */
+    [data-testid="stMetricDelta"] > div {
+        font-weight: 500 !important;
+    }
+
+    /* Erfolg/Einnahmen (Grün) */
+    div[data-testid="stMetricDelta"] > div[data-testid="stMetricDeltaDirection-Up"] {
+        color: #28a745 !important;
+    }
+
+    /* Verlust/Ausgaben (Rot) */
+    div[data-testid="stMetricDelta"] > div[data-testid="stMetricDeltaDirection-Down"] {
+        color: #dc3545 !important;
+    }
+    
     /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 24px;
