@@ -256,13 +256,33 @@ if st.session_state.view == "landing":
     render_landing_page()
     st.stop()
 
-# Login Check
+# Login Check (Email-Gated)
 if not st.session_state.password_correct:
-    pwd = st.text_input("Access Code", type="password")
-    if st.button("UNLOCK"):
-        if pwd == st.secrets.get("APP_PASSWORD", "Start123!"):
-            st.session_state.password_correct = True
-            st.rerun()
+    st.markdown("### 🔒 TERMINAL ACCESS")
+    login_email = st.text_input("Registrierte E-Mail", placeholder="name@domain.com")
+    
+    if st.button("BOOT SYSTEM"):
+        if login_email:
+            supabase = init_supabase()
+            if supabase:
+                try:
+                    # Check if email is confirmed in waitlist
+                    check = supabase.table("waitlist").select("email")\
+                            .eq("email", login_email)\
+                            .eq("is_confirmed", True).execute()
+                    
+                    if check.data and len(check.data) > 0:
+                        st.session_state.password_correct = True
+                        st.success("🔓 System Boot Sequence Initialized.")
+                        st.rerun()
+                    else:
+                        st.error("❌ E-Mail nicht bestätigt oder nicht registriert. Bitte prüfe dein Postfach.")
+                except Exception as e:
+                    st.error(f"Datenbank-Fehler: {e}")
+            else:
+                st.error("Supabase-Verbindung fehlgeschlagen.")
+        else:
+            st.warning("Bitte E-Mail eingeben.")
     st.stop()
 
 # --- VIRAL SHARE-TO-UNLOCK ---
