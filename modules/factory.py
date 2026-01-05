@@ -49,6 +49,10 @@ def render_factory(df_history):
     with col2:
         st.subheader("Draft Output")
         if "factory_output" in st.session_state:
-            st.markdown(f"<div style='background: #111; padding: 20px; border-radius: 10px; border-left: 3px solid #fff;'>{st.session_state.factory_output}</div>", unsafe_allow_html=True)
+            st.markdown(f"""
+                <div class='ai-box' style='color: #1a1a1a; border-left: 4px solid #000000;'>
+                    {st.session_state.factory_output}
+                </div>
+            """, unsafe_allow_html=True)
         else:
             st.info("Warte auf Input...")
