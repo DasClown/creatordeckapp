@@ -14,10 +14,27 @@ def render_planner(supabase):
             platform = st.selectbox("Platform", ["Instagram", "YouTube", "TikTok"])
             c_type = st.selectbox("Type", ["Reel", "Video", "Post", "Story"])
             title = st.text_input("Title/Hook")
+            
+            # Asset Linking aus Gallery
+            try:
+                files = supabase.storage.from_("assets").list("branded")
+                file_options = [f['name'] for f in files] if files else []
+                selected_asset = st.selectbox("Link Asset", ["None"] + file_options)
+            except:
+                selected_asset = "None"
+                st.caption("⚠️ Gallery Assets nicht verfügbar")
+            
             if st.form_submit_button("Schedule"):
+                asset_url = None
+                if selected_asset != "None":
+                    asset_url = supabase.storage.from_("assets").get_public_url(f"branded/{selected_asset}")
+                
                 supabase.table("content_plan").insert({
-                    "publish_date": str(date), "platform": platform, 
-                    "content_type": c_type, "title": title
+                    "publish_date": str(date), 
+                    "platform": platform, 
+                    "content_type": c_type, 
+                    "title": title,
+                    "asset_url": asset_url
                 }).execute()
                 st.rerun()
 
