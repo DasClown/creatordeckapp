@@ -239,14 +239,15 @@ if "password_correct" not in st.session_state:
 
 # --- EMAIL VERIFICATION HANDLER ---
 if "verify" in st.query_params:
-    verify_email = st.query_params["verify"]
+    email_to_verify = st.query_params["verify"]
     supabase = init_supabase()
     if supabase:
         try:
-            # Wir setzen is_confirmed auf true (Spalte muss in DB existieren)
-            supabase.table("waitlist").update({"is_confirmed": True}).eq("email", verify_email).execute()
-            st.success(f"🎉 Danke! Deine E-Mail {verify_email} wurde erfolgreich bestätigt.")
-            # Parameter entfernen um Doppelklicks zu vermeiden (Optional in Streamlit)
+            # Update in der Datenbank
+            supabase.table("waitlist").update({"is_confirmed": True}).eq("email", email_to_verify).execute()
+            st.success("🎉 E-Mail bestätigt! Dein Zugang wurde erfolgreich verifiziert.")
+            # Parameter aus URL entfernen
+            st.query_params.clear()
         except Exception as e:
             st.error(f"Verifizierungs-Fehler: {e}")
 
