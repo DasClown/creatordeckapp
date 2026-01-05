@@ -26,7 +26,7 @@ if not st.session_state.password_correct:
 # --- NAVIGATION ---
 with st.sidebar:
     st.title("CreatorOS")
-    page = st.radio("NAVIGATION", ["DASHBOARD", "FACTORY", "GALLERY", "CHANNELS", "CRM", "FINANCE", "PLANNER"])
+    page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "FINANCE", "PLANNER"])
     st.divider()
     if st.button("LOGOUT"):
         st.session_state.password_correct = False
