@@ -549,4 +549,6 @@ def main():
             render_dashboard_layout()
 
 if __name__ == "__main__":
+    if "user_email" not in st.session_state:
+        st.session_state.user_email = "janick@icanhasbucket.de" # Fallback für Test
     main()
