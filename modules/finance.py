@@ -1,28 +1,46 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from datetime import datetime
 
 def render_finance(supabase):
     st.title("💰 FINANCE CONTROL")
-
+    
     # Daten laden
-    res = supabase.table("transactions").select("*").order("date").execute()
+    res = supabase.table("transactions").select("*").execute()
     df = pd.DataFrame(res.data)
-
+    
     if df.empty:
         st.info("Keine Transaktionen gefunden.")
         df = pd.DataFrame(columns=["date", "type", "amount", "category", "description"])
     else:
         df["amount"] = df["amount"].astype(float)
+        
+        # Forecast-Berechnung: Deals, die 'Closed' aber in der Zukunft liegen
+        today = datetime.now().date()
+        df['date'] = pd.to_datetime(df['date']).dt.date
+        
+        actual_revenue = df[(df['type'] == 'Income') & (df['date'] <= today)]['amount'].sum()
+        forecast_revenue = df[(df['type'] == 'Income') & (df['date'] > today)]['amount'].sum()
+        burn_rate = df[df['type'] == 'Expense']['amount'].sum()
 
-    # Metriken berechnen
-    inc = df[df["type"] == "Income"]["amount"].sum()
-    exp = df[df["type"] == "Expense"]["amount"].sum()
-    
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Total Income", f"{inc:,.2f} €")
-    c2.metric("Total Expenses", f"{exp:,.2f} €", delta_color="inverse")
-    c3.metric("Net Profit", f"{(inc - exp):,.2f} €")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Current Cash", f"{actual_revenue:,.2f} €")
+        col2.metric("Pipeline Forecast", f"{forecast_revenue:,.2f} €", delta="+ Deals")
+        col3.metric("Burn Rate", f"{burn_rate:,.2f} €", delta_color="inverse")
+
+        # Visualisierung des Cashflow-Verlaufs
+        st.subheader("Cashflow Projection")
+        fig = px.line(df.sort_values("date"), x="date", y="amount", color="type", template="plotly_white")
+        fig.update_traces(line_width=2)
+        fig.update_layout(
+            xaxis_showgrid=False,
+            yaxis_showgrid=True,
+            yaxis_gridcolor="#eeeeee",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)"
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
     # Editor für neue Einträge
     st.subheader("Transaction Log")
