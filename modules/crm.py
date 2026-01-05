@@ -2,21 +2,18 @@ import streamlit as st
 import pandas as pd
 
 def render_crm():
-    st.header("💎 CRM & Deals")
+    st.title("💎 RELATIONSHIPS (CRM)")
     
-    col1, col2 = st.columns([2, 1])
+    t1, t2 = st.tabs(["DEALS PIPELINE", "CONTACTS"])
     
-    with col1:
-        st.subheader("Active Pipeline")
-        # Dummy Daten für die Pipeline
+    with t1:
         deals = {
             "Partner": ["Gymshark", "Oura", "Adobe"],
             "Status": ["Negotiation", "Sent", "Closed"],
-            "Value": ["€5.000", "€2.500", "€10.000"]
+            "Value": ["5.000€", "2.500€", "10.000€"]
         }
-        st.table(pd.DataFrame(deals))
+        st.dataframe(pd.DataFrame(deals), use_container_width=True, hide_index=True)
+        st.button("➕ NEW DEAL")
         
-    with col2:
-        st.subheader("Quick Actions")
-        st.button("➕ New Contact")
-        st.button("📄 Export Invoices")
+    with t2:
+        st.info("Contacts module coming soon.")
