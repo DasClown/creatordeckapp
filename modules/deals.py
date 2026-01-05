@@ -19,5 +19,5 @@ def render_deals():
     
     st.data_editor(deals, use_container_width=True, num_rows="dynamic")
     
-    if st.button("➕ CREATE NEW DEAL"):
+    if st.button("CREATE NEW DEAL"):
         st.toast("Deal Template created.")

@@ -15,7 +15,7 @@ def render_gallery(supabase):
         
         if uploaded_file:
             img = Image.open(uploaded_file)
-            if st.button("PROCESS & UPLOAD ⚡"):
+            if st.button("PROCESS & UPLOAD"):
                 # Branding Logik
                 draw = ImageDraw.Draw(img)
                 w, h = img.size

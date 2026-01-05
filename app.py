@@ -27,16 +27,16 @@ def init_supabase():
         url = url.strip().rstrip("/")
         
         if not url.startswith("https://"):
-            st.error("🚫 SUPABASE_URL muss mit 'https://' beginnen.")
+            st.error("SUPABASE_URL muss mit 'https://' beginnen.")
             return None
         
         if ".supabase.co" not in url:
-            st.error("🚫 SUPABASE_URL scheint kein gültiger Supabase-Endpunkt zu sein.")
+            st.error("SUPABASE_URL scheint kein gültiger Supabase-Endpunkt zu sein.")
             return None
 
         return create_client(url, key)
     except Exception as e:
-        st.error(f"🔧 Interner Fehler bei Supabase-Initialisierung: {e}")
+        st.error(f"Interner Fehler bei Supabase-Initialisierung: {e}")
         return None
 
 def send_verification_email(email):
@@ -78,7 +78,7 @@ def run_instagram_sync(profile_url, supabase):
     params = {"url": profile_url}
 
     try:
-        with st.spinner("🌀 INITIALIZING CORE SYNC..."):
+        with st.spinner("INITIALIZING CORE SYNC..."):
             response = requests.get(api_url, headers=headers, params=params)
             if response.status_code == 200:
                 data = response.json().get("data", {})
@@ -107,7 +107,7 @@ def run_instagram_sync(profile_url, supabase):
 
 def render_instagram_sync(supabase):
     """UI Komponente für den Instagram Core Sync (In Sidebar oder Landing)"""
-    st.markdown("### 🌀 SYSTEM CONTROL")
+    st.markdown("### SYSTEM CONTROL")
     # Einzigartiger Key: 'unique_sync_input'
     user_url = st.text_input("INSTAGRAM URL", placeholder="https://instagram.com/...", key="unique_sync_input")
 
@@ -273,23 +273,23 @@ def render_landing_page():
                         if existing.data and len(existing.data) > 0:
                             is_conf = existing.data[0].get("is_confirmed", False)
                             if is_conf:
-                                st.info("ℹ️ Du bist bereits verifiziert! Klicke unten auf 'ENTER TERMINAL' zum Login.")
+                                st.info("Du bist bereits verifiziert! Klicke unten auf 'ENTER TERMINAL' zum Login.")
                             else:
-                                st.warning("ℹ️ Du bist bereits auf der Warteliste, aber noch nicht bestätigt.")
+                                st.warning("Du bist bereits auf der Warteliste, aber noch nicht bestätigt.")
                                 if st.button("BESTÄTIGUNGS-LINK ERNEUT SENDEN", key="resend_landing"):
                                     if send_verification_email(email):
-                                        st.success(f"✅ Link erneut an {email} gesendet.")
+                                        st.success(f"Link erneut an {email} gesendet.")
                         else:
                             # 1. In DB speichern (is_confirmed ist default false)
                             supabase.table("waitlist").insert({"email": email}).execute()
                             
                             # 2. E-Mail versenden via Resend
                             if send_verification_email(email):
-                                st.success(f"✅ Bestätigungs-Link wurde an {email} gesendet.")
+                                st.success(f"Bestätigungs-Link wurde an {email} gesendet.")
                             else:
-                                st.warning("⚠️ E-Mail konnte nicht gesendet werden, aber dein Eintrag wurde gespeichert.")
+                                st.warning("E-Mail konnte nicht gesendet werden, aber dein Eintrag wurde gespeichert.")
                             
-                            st.info(f"🚀 ALPHA DEBUG: Bitte prüfe dein Postfach. Link: https://www.content-core.io/?verify={email}")
+                            st.info(f"ALPHA DEBUG: Bitte prüfe dein Postfach. Link: https://www.content-core.io/?verify={email}")
                             # In einer Alpha-Phase können wir den Link zum Testen anzeigen
                     except Exception as e:
                         st.error(f"Fehler beim Speichern: {str(e)}")
@@ -304,7 +304,7 @@ def render_landing_page():
     # Trust & Privacy Badge
     st.markdown("""
         <div style='background: #ffffff; padding: 0px; margin: 40px 0; text-align: center;'>
-            <h4 style='margin: 0 0 10px 0; font-weight: 300; font-size: 20px; color: #000000;'>🔒 Data Privacy</h4>
+            <h4 style='margin: 0 0 10px 0; font-weight: 300; font-size: 20px; color: #000000;'>Data Privacy</h4>
             <p style='margin: 0; color: #000000; font-size: 16px; line-height: 1.6; font-weight: 300; max-width: 700px; margin: 0 auto;'>
                 Deine Daten werden verschlüsselt in einer dedizierten Supabase-Instanz gespeichert. 
                 Wir haben <span style='font-weight: 600;'>keinen Zugriff</span> auf deine Passwörter; die Verbindung erfolgt über 
@@ -343,16 +343,16 @@ def render_auth_interface():
                         if existing.data and len(existing.data) > 0:
                             is_conf = existing.data[0].get("is_confirmed", False)
                             if is_conf:
-                                st.info("ℹ️ Du bist bereits verifiziert! Nutze den LOGIN Tab.")
+                                st.info("Du bist bereits verifiziert! Nutze den LOGIN Tab.")
                             else:
-                                st.warning("ℹ️ Du bist bereits auf der Warteliste, aber noch nicht bestätigt.")
+                                st.warning("Du bist bereits auf der Warteliste, aber noch nicht bestätigt.")
                                 if st.button("BESTÄTIGUNGS-LINK ERNEUT SENDEN"):
                                     if send_verification_email(new_email):
-                                        st.success(f"✅ Link erneut an {new_email} gesendet.")
+                                        st.success(f"Link erneut an {new_email} gesendet.")
                         else:
                             supabase.table("waitlist").insert({"email": new_email, "is_confirmed": False}).execute()
                             if send_verification_email(new_email):
-                                st.success(f"✅ Bestätigungs-Link an {new_email} gesendet. Bitte prüfe dein Postfach.")
+                                st.success(f"Bestätigungs-Link an {new_email} gesendet. Bitte prüfe dein Postfach.")
                     except Exception as e:
                         st.error(f"Fehler: {e}")
                 else:
@@ -372,10 +372,10 @@ def render_auth_interface():
                         if check.data and len(check.data) > 0 and check.data[0]['is_confirmed']:
                             st.session_state.authenticated = True
                             st.session_state.user_email = login_email
-                            st.success("🔓 System Boot Sequence Initialized.")
+                            st.success("System Boot Sequence Initialized.")
                             st.rerun()
                         else:
-                            st.error("❌ Zugriff verweigert. E-Mail nicht bestätigt oder nicht registriert.")
+                            st.error("Zugriff verweigert. E-Mail nicht bestätigt oder nicht registriert.")
                     except Exception as e:
                         st.error(f"Datenbank-Fehler: {e}")
                 else:
@@ -387,7 +387,7 @@ def render_auth_interface():
 def render_viral_share():
     st.markdown("""
         <div style='padding: 60px 20px; text-align: center;'>
-            <h2 style='font-weight: 300; margin-bottom: 20px;'>🔓 ACTIVATE FULL ENGINE</h2>
+            <h2 style='font-weight: 300; margin-bottom: 20px;'>ACTIVATE FULL ENGINE</h2>
             <p style='color: #666; margin-bottom: 30px; font-weight: 300;'>
                 Teile CONTENT CORE auf Social Media und erhalte sofortigen Vollzugriff.<br>
                 Kostenlos. Für immer.
@@ -397,19 +397,19 @@ def render_viral_share():
     
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("### 🐦 TWITTER/X")
-        share_twitter = "https://twitter.com/intent/tweet?text=Gerade%20das%20neue%20Terminal%20von%20content-core.io%20entdeckt.%20Endlich%20Ordnung%20im%20Workflow.%20%F0%9F%94%A5"
+        st.markdown("### TWITTER/X")
+        share_twitter = "https://twitter.com/intent/tweet?text=Gerade%20das%20neue%20Terminal%20von%20content-core.io%20entdeckt.%20Endlich%20Ordnung%20im%20Workflow.%20"
 # --- DASHBOARD & NAVIGATION ---
 def render_dashboard_layout():
     supabase = init_supabase()
     if not supabase:
-        st.error("⚠️ Supabase nicht konfiguriert.")
+        st.error("Supabase nicht konfiguriert.")
         return
 
     with st.sidebar:
         st.image("assets/logo_full.jpg", use_container_width=True)
         st.markdown("<div style='margin-top: -20px;'></div>", unsafe_allow_html=True)
-        st.info("🚀 ALPHA ACCESS: FREE FOREVER")
+        st.info("ALPHA ACCESS: FREE FOREVER")
         
         # Navigation
         page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "DEMO"])
@@ -444,14 +444,14 @@ def render_dashboard_layout():
         factory.render_factory(supabase)
 
 def render_dashboard(supabase):
-    st.title("ANTIGRAVITY DECK 🚀")
+    st.title("ANTIGRAVITY DECK")
     user_id = st.session_state.get('user_email', 'unknown')
 
     try:
         stats = supabase.table("stats_history").select("*").eq("user_id", user_id).execute()
         
         if not stats.data:
-            st.markdown("### 🛠 System Initialization")
+            st.markdown("### System Initialization")
             st.info("Willkommen im Terminal. Lade deine ersten Daten.")
             col1, col2 = st.columns(2)
             with col1:
@@ -481,7 +481,7 @@ def render_dashboard(supabase):
                 c2.metric("ENGAGEMENT", f"{float(s['engagement_rate']):.2%}")
                 c3.metric("CORE SCORE", f"{float(s['quality_score']):.1f}")
 
-                st.markdown("### 📈 FOLLOWER TREND")
+                st.markdown("### FOLLOWER TREND")
                 # Chart (Verlauf aus allen Einträgen)
                 all_res = supabase.table("stats_history")\
                     .select("created_at", "followers")\

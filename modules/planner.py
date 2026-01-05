@@ -8,7 +8,7 @@ def render_planner(supabase):
     df_plan = pd.DataFrame(res.data)
 
     # Quick Add Form
-    with st.expander("➕ ADD NEW CONTENT"):
+    with st.expander("ADD NEW CONTENT"):
         with st.form("planner_form"):
             date = st.date_input("Date")
             platform = st.selectbox("Platform", ["Instagram", "YouTube", "TikTok"])
@@ -22,7 +22,7 @@ def render_planner(supabase):
                 selected_asset = st.selectbox("Link Asset", ["None"] + file_options)
             except:
                 selected_asset = "None"
-                st.caption("⚠️ Gallery Assets nicht verfügbar")
+                st.caption("Gallery Assets nicht verfügbar")
             
             if st.form_submit_button("Schedule"):
                 asset_url = None

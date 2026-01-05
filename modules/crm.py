@@ -50,7 +50,7 @@ def render_crm(supabase):
                         "description": f"Deal: {row['brand']}",
                         "date": str(row["deadline"])
                     }).execute()
-                    st.toast(f"💰 Finance: {row['brand']} als Einnahme verbucht!")
+                    st.toast(f"Finance: {row['brand']} als Einnahme verbucht!")
         
         st.success("Daten synchronisiert.")
 

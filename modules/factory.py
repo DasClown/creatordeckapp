@@ -19,7 +19,7 @@ def render_factory(supabase):
         topic = st.text_area("Thema", placeholder="Worüber willst du posten?")
         vibe = st.select_slider("Vibe", options=["Deep", "Direct", "Hype", "Value"])
         
-        if st.button("GENERATE CONTENT ⚡"):
+        if st.button("GENERATE CONTENT"):
             if topic:
                 with st.spinner("AI analysiert Top-Performance..."):
                     model = genai.GenerativeModel('gemini-1.5-flash')
