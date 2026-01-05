@@ -160,6 +160,14 @@ st.markdown("""
         font-weight: 800 !important;
         border-bottom: 2px solid #000000 !important;
     }
+
+    /* Status Boxen: SHARP & CLEAN */
+    div[data-testid="stNotification"] {
+        border-radius: 0px !important;
+        border: 1px solid #000000 !important;
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
