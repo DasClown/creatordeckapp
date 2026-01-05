@@ -66,57 +66,56 @@ def send_verification_email(email):
         st.error(f"Resend Error: {str(e)}")
         return None
 
-def sync_instagram_data(handle, supabase):
-    """Refined Instagram sync using instagram-statistics-api.p.rapidapi.com"""
-    # URL encoded handle link
-    profile_url = f"https://www.instagram.com/{handle}/"
-    url = "https://instagram-statistics-api.p.rapidapi.com/community"
+def run_instagram_sync(profile_url, supabase):
+    """Refined Instagram sync using the Statistics API with URL input"""
+    api_url = "https://instagram-statistics-api.p.rapidapi.com/community"
     
     headers = {
-        "X-RapidAPI-Key": st.secrets.get("RAPIDAPI_KEY", "30d7195bb1msh4814c34f2c7b155p16cf1ajsn402da52d5aec"),
-        "X-RapidAPI-Host": "instagram-statistics-api.p.rapidapi.com"
+        "x-rapidapi-key": st.secrets.get("RAPIDAPI_KEY", "30d7195bb1msh4814c34f2c7b155p16cf1ajsn402da52d5aec"),
+        "x-rapidapi-host": "instagram-statistics-api.p.rapidapi.com"
     }
     
+    params = {"url": profile_url}
+
     try:
-        response = requests.get(url, headers=headers, params={"url": profile_url})
-        res = response.json()
-        
-        # Die API Struktur kann variieren, wir suchen nach den Core-Daten
-        # Basierend auf dem Nutzersnippet: meta.code == 200
-        if res.get("meta", {}).get("code") == 200:
-            d = res.get("data", {})
+        response = requests.get(api_url, headers=headers, params=params)
+        if response.status_code == 200:
+            data = response.json().get("data", {})
             
-            payload = {
+            # Daten-Payload für Supabase basierend auf API-Struktur
+            stats_payload = {
                 "user_id": st.session_state.get('user_email', 'unknown'),
                 "platform": "instagram",
-                "handle": d.get("username") or handle,
-                "followers": d.get("followers") or d.get("usersCount", 0),
-                "engagement_rate": round(d.get("avgER", 0) * 100, 2),
-                "avg_likes": d.get("avgLikes", 0),
-                "quality_score": round(d.get("qualityScore", 0) * 100, 1)
+                "handle": data.get("screenName"),
+                "followers": data.get("usersCount"),
+                "engagement_rate": data.get("avgER"),
+                "avg_likes": data.get("avgLikes"),
+                "quality_score": data.get("qualityScore")
             }
             
-            supabase.table("stats_history").insert(payload).execute()
-            st.success(f"CORE SYNC SUCCESS: {handle} verknüpft.")
+            # Speichern in die Tabelle stats_history
+            supabase.table("stats_history").insert(stats_payload).execute()
+            
+            st.success(f"Sync erfolgreich: {data.get('name')} ist jetzt im Core.")
             return True
         else:
-            st.error(f"API Fehler: {res.get('meta', {}).get('message', 'Unbekannter Fehler')}")
+            st.error(f"API Fehler: {response.status_code}")
     except Exception as e:
-        st.error(f"Sync-Fehler: {str(e)}")
+        st.error(f"Verbindungsfehler: {e}")
     return False
 
 def render_instagram_sync(supabase):
-    """UI for Refined Instagram sync"""
-    st.markdown("### ⚡ AUTO-SYNC: INSTAGRAM")
-    handle = st.text_input("Instagram Handle", placeholder="deinaccount")
-    
-    if st.button("CONNECT & FETCH DATA"):
-        if handle:
-            with st.spinner("Initialisiere Deep-Sync mit CONTENT CORE Engine..."):
-                if sync_instagram_data(handle, supabase):
+    """UI Komponente für den Instagram Core Sync"""
+    st.markdown("### 🌀 Instagram Core Sync")
+    user_url = st.text_input("Instagram URL einfügen", placeholder="https://www.instagram.com/therock/")
+
+    if st.button("START INITIALIZATION"):
+        if user_url:
+            with st.spinner("🌀 Initialisiere Deep-Sync mit CONTENT CORE Engine..."):
+                if run_instagram_sync(user_url, supabase):
                     st.rerun()
         else:
-            st.warning("Handle erforderlich.")
+            st.warning("E-Mail oder URL erforderlich.")
 
 # --- SETUP ---
 st.set_page_config(
