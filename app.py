@@ -201,6 +201,58 @@ if not st.session_state.password_correct:
             st.rerun()
     st.stop()
 
+# --- VIRAL SHARE-TO-UNLOCK ---
+if "full_access" not in st.session_state:
+    st.session_state.full_access = False
+
+if not st.session_state.full_access:
+    st.markdown("""
+        <div style='padding: 60px 20px; text-align: center;'>
+            <h2 style='font-weight: 300; margin-bottom: 20px;'>🔓 ACTIVATE FULL ENGINE</h2>
+            <p style='color: #666; margin-bottom: 30px;'>
+                Teile CREATOR.FANS auf Social Media und erhalte sofortigen Vollzugriff.<br>
+                Kostenlos. Für immer.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### 🐦 TWITTER/X")
+        share_twitter = "https://twitter.com/intent/tweet?text=Gerade%20das%20neue%20Terminal%20von%20creator.fans%20entdeckt.%20Endlich%20Ordnung%20im%20Workflow.%20%F0%9F%94%A5"
+        st.markdown(f"""
+            <a href='{share_twitter}' target='_blank' style='text-decoration:none;'>
+                <div style='padding:15px; border:1px solid #000; color:#000; text-align:center; background:#fff; transition: all 0.3s;'>
+                    TWEET & UNLOCK
+                </div>
+            </a>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("### 🔴 REDDIT")
+        share_reddit = "https://www.reddit.com/submit?title=CREATOR.FANS%20-%20Advanced%20Analytics%20for%20Creators&url=https://creator.fans"
+        st.markdown(f"""
+            <a href='{share_reddit}' target='_blank' style='text-decoration:none;'>
+                <div style='padding:15px; border:1px solid #000; color:#000; text-align:center; background:#fff; transition: all 0.3s;'>
+                    POST & UNLOCK
+                </div>
+            </a>
+        """, unsafe_allow_html=True)
+    
+    st.divider()
+    
+    st.markdown("<p style='text-align: center; color: #999; font-size: 14px;'>Nach dem Posten klicke hier:</p>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1,1,1])
+    with col2:
+        if st.button("✅ ICH HABE GETEILT", use_container_width=True):
+            st.session_state.full_access = True
+            st.success("🎉 Vollzugriff aktiviert! Danke fürs Teilen!")
+            st.rerun()
+    
+    st.stop()
+
 # --- NAVIGATION ---
 CREATOR_DISPLAY_NAME = st.secrets.get("BRAND_NAME", "Admin")
 
