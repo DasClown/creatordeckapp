@@ -1,4 +1,5 @@
 import streamlit as st
+import requests
 import toml
 import os
 
@@ -64,6 +65,56 @@ def send_verification_email(email):
     except Exception as e:
         st.error(f"Resend Error: {str(e)}")
         return None
+
+def get_instagram_data(handle):
+    """Fetch Instagram metrics via RapidAPI"""
+    url = "https://instagram-data12.p.rapidapi.com/user/details-by-username/"
+    querystring = {"username": handle}
+    
+    headers = {
+        "X-RapidAPI-Key": st.secrets.get("RAPIDAPI_KEY", "YOUR_KEY"),
+        "X-RapidAPI-Host": "instagram-data12.p.rapidapi.com"
+    }
+
+    try:
+        response = requests.get(url, headers=headers, params=querystring)
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                "followers": data.get("edge_followed_by", {}).get("count", 0),
+                "following": data.get("edge_follow", {}).get("count", 0),
+                "posts": data.get("edge_owner_to_timeline_media", {}).get("count", 0),
+                "biography": data.get("biography", "")
+            }
+    except Exception as e:
+        st.error(f"API Sync Error: {e}")
+    return None
+
+def render_instagram_sync(supabase):
+    """UI for Instagram sync"""
+    st.markdown("### ⚡ AUTO-SYNC: INSTAGRAM")
+    handle = st.text_input("Instagram Handle", placeholder="deinaccount")
+    
+    if st.button("CONNECT & FETCH DATA"):
+        if handle:
+            with st.spinner("Extrahiere Daten aus dem Instagram-Grid..."):
+                data = get_instagram_data(handle)
+                
+                if data:
+                    user_id = st.session_state.get('user_email', 'unknown')
+                    # Speichern in Supabase
+                    supabase.table("stats_history").insert({
+                        "user_id": user_id,
+                        "followers": data["followers"],
+                        "engagement_rate": 0.0,
+                        "platform": "instagram",
+                        "handle": handle
+                    }).execute()
+                    
+                    st.success(f"Synchronisiert: {data['followers']} Follower gefunden.")
+                    st.rerun()
+        else:
+            st.warning("Handle erforderlich.")
 
 # --- SETUP ---
 st.set_page_config(
@@ -402,8 +453,7 @@ def render_dashboard(supabase):
             st.info("Willkommen im Terminal. Lade deine ersten Daten.")
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown("#### Option A: Instagram Sync")
-                if st.button("📱 Connect Instagram"): st.info("Anleitung folgt.")
+                render_instagram_sync(supabase)
             with col2:
                 st.markdown("#### Option B: Manual Data Entry")
                 with st.expander("Eckdaten eingeben"):
