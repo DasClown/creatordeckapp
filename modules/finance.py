@@ -32,13 +32,18 @@ def render_finance(supabase):
         # Visualisierung des Cashflow-Verlaufs
         st.subheader("Cashflow Projection")
         fig = px.line(df.sort_values("date"), x="date", y="amount", color="type", template="plotly_white")
-        fig.update_traces(line_width=2)
+        fig.update_traces(
+            line_color="#000000", 
+            fillcolor="rgba(0,0,0,0.02)",  # Hauch von Grau
+            line_width=1.5
+        )
         fig.update_layout(
+            plot_bgcolor="white",
+            paper_bgcolor="white",
             xaxis_showgrid=False,
             yaxis_showgrid=True,
-            yaxis_gridcolor="#eeeeee",
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)"
+            yaxis_gridcolor="#F0F0F0",
+            font_color="#000000"
         )
         st.plotly_chart(fig, use_container_width=True)
 
