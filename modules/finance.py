@@ -19,8 +19,9 @@ def render_finance():
             "Month": ["Oct", "Nov", "Dec", "Jan"],
             "Revenue": [3200, 3800, 5100, 4200]
         })
-        fig = px.area(data, x="Month", y="Revenue", template="plotly_dark")
-        fig.update_traces(line_color="#ffffff", fillcolor="rgba(255,255,255,0.1)")
+        fig = px.area(data, x="Month", y="Revenue", template="plotly_white")
+        fig.update_traces(line_color="#000000", fillcolor="rgba(0,0,0,0.05)")
+        fig.update_layout(paper_bgcolor="white", plot_bgcolor="white")
         st.plotly_chart(fig, use_container_width=True)
         
     with c2:
