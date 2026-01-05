@@ -10,7 +10,7 @@ from supabase import create_client
 
 # --- SETUP ---
 st.set_page_config(
-    page_title="CREATOR.TECH",
+    page_title="CREATOR.FANS",
     page_icon="🚀",
     layout="wide"
 )
@@ -23,11 +23,11 @@ st.markdown("""
 # --- SEO & META TAGS ---
 st.markdown("""
     <head>
-        <title>CREATOR.TECH | The Intelligence Layer for Creators</title>
-        <meta name="description" content="Automatisierte Analyse, AI-Content-Strategie und Finanz-Kontrolle für High-Scale Creator. Jetzt Zugang zur Private Beta anfordern.">
-        <meta name="keywords" content="Creator Management, Influencer Tool, Content Strategy AI, Creator CRM, Finance for Creators">
-        <meta property="og:title" content="CREATOR.TECH">
-        <meta property="og:description" content="Das Betriebssystem für dein Creator-Business.">
+        <title>CREATOR.FANS | Advanced Analytics. Zero Cost. High Impact.</title>
+        <meta name="description" content="Advanced Analytics für Creator. Komplett kostenlos. Alpha Access für Early Adopters.">
+        <meta name="keywords" content="Creator Analytics, Free Creator Tools, Fan Economy, Creator CRM, Content Analytics">
+        <meta property="og:title" content="CREATOR.FANS">
+        <meta property="og:description" content="Advanced Analytics. Zero Cost. High Impact.">
         <meta property="og:type" content="website">
         <meta name="robots" content="index, follow">
     </head>
@@ -128,10 +128,10 @@ st.markdown("""
 def render_landing_page():
     st.markdown("""
         <div style='padding: 80px 20px; text-align: center;'>
-            <h1 style='font-size: 64px; font-weight: 300; letter-spacing: -2px;'>CREATOR.TECH</h1>
+            <h1 style='font-size: 64px; font-weight: 300; letter-spacing: -2px;'>CREATOR.FANS</h1>
             <p style='font-size: 18px; color: #666; font-weight: 300; max-width: 600px; margin: 0 auto 40px auto;'>
-                The Intelligence Layer for High-Scale Creators. <br>
-                Aktuell im Private-Beta-Modus.
+                Advanced Analytics. Zero Cost. High Impact. <br>
+                🚀 Alpha Access: Free Forever für Early Adopters
             </p>
         </div>
     """, unsafe_allow_html=True)
@@ -205,7 +205,8 @@ if not st.session_state.password_correct:
 CREATOR_DISPLAY_NAME = st.secrets.get("BRAND_NAME", "Admin")
 
 with st.sidebar:
-    st.markdown("<h1 style='letter-spacing: -1px;'>CREATOR.TECH</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='letter-spacing: -1px;'>CREATOR.FANS</h1>", unsafe_allow_html=True)
+    st.info("🚀 ALPHA ACCESS: FREE FOREVER FOR EARLY ADOPTERS")
     page = st.radio("NAVIGATION", [
         "DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "DEMO"
     ])
