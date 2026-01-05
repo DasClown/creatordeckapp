@@ -400,28 +400,33 @@ def render_dashboard_layout():
 
 def render_dashboard(supabase):
     st.title("ANTIGRAVITY DECK 🚀")
-    user_id = "default"
-    stats = supabase.table("stats_history").select("*").eq("user_id", user_id).execute()
-    
-    if not stats.data:
-        st.markdown("### 🛠 System Initialization")
-        st.info("Willkommen im Terminal. Lade deine ersten Daten.")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("#### Option A: Instagram Sync")
-            if st.button("📱 Connect Instagram"): st.info("Anleitung folgt.")
-        with col2:
-            st.markdown("#### Option B: Manual Data Entry")
-            with st.expander("Eckdaten eingeben"):
-                followers = st.number_input("Follower", value=1000)
-                if st.button("Initialize"):
-                    supabase.table("stats_history").insert({"platform": "instagram", "metric": "followers", "value": followers, "user_id": user_id}).execute()
-                    st.rerun()
-    else:
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Reach", "125.400", "+8.2%")
-        c2.metric("Engagement", "12.300", "-1.5%")
-        c3.metric("Followers", "45.120", "+0.4%")
+    user_id = st.session_state.get('user_email', 'unknown')
+
+    try:
+        stats = supabase.table("stats_history").select("*").eq("user_id", user_id).execute()
+        
+        if not stats.data:
+            st.markdown("### 🛠 System Initialization")
+            st.info("Willkommen im Terminal. Lade deine ersten Daten.")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("#### Option A: Instagram Sync")
+                if st.button("📱 Connect Instagram"): st.info("Anleitung folgt.")
+            with col2:
+                st.markdown("#### Option B: Manual Data Entry")
+                with st.expander("Eckdaten eingeben"):
+                    followers = st.number_input("Follower", value=1000)
+                    if st.button("Initialize"):
+                        supabase.table("stats_history").insert({"platform": "instagram", "metric": "followers", "value": followers, "user_id": user_id}).execute()
+                        st.rerun()
+        else:
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Reach", "125.400", "+8.2%")
+            c2.metric("Engagement", "12.300", "-1.5%")
+            c3.metric("Followers", "45.120", "+0.4%")
+    except Exception as e:
+        st.error(f"Datenbank-Fehler: {e}")
+        st.info("Hinweis: Stelle sicher, dass die Tabelle 'stats_history' in Supabase existiert.")
 
 # --- MAIN ORCHESTRATION ---
 def main():
