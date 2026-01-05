@@ -1,7 +1,7 @@
 import streamlit as st
 
 # --- 1. BOOT VERIFICATION (FAIL-SAFE) ---
-required_secrets = ["SUPABASE_URL", "SUPABASE_KEY", "RAPIDAPI_KEY", "RESEND_API_KEY"]
+required_secrets = ["SUPABASE_URL", "SUPABASE_KEY", "RAPIDAPI_KEY", "RESEND_API_KEY", "GEMINI_API_KEY"]
 missing = [s for s in required_secrets if s not in st.secrets]
 
 if missing:
@@ -14,7 +14,7 @@ try:
     import toml
     import os
     import pandas as pd
-    import google.generativeai as genai
+    import google.genai as genai
     from supabase import create_client
     import resend
     

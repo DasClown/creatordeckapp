@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import google.generativeai as genai
+import google.genai as genai
 
 def render_factory(supabase):
     st.title("FACTORY")
@@ -22,7 +22,7 @@ def render_factory(supabase):
         if st.button("GENERATE CONTENT"):
             if topic:
                 with st.spinner("AI analysiert Top-Performance..."):
-                    model = genai.GenerativeModel('gemini-1.5-flash')
+                    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
                     
                     # Kontext-Vorbereitung aus DB
                     context = top_data.to_string() if not top_data.empty else "Keine Historiendaten vorhanden."
@@ -40,7 +40,7 @@ def render_factory(supabase):
                     4. CTA basierend auf aktuellem Vibe.
                     """
                     
-                    response = model.generate_content(prompt)
+                    response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
                     st.session_state.factory_output = response.text
             else:
                 st.warning("Eingabe erforderlich.")
