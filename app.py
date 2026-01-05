@@ -181,23 +181,8 @@ def render_landing_page():
                             supabase.table("waitlist").insert({"email": email}).execute()
                             st.success("✅ Auf die Warteliste gesetzt.")
                     except Exception as e:
-                        if "Name or service not known" in str(e):
-                            st.error("📡 Verbindungsfehler: Die Supabase-Domain konnte nicht aufgelöst werden.")
-                            
-                            # Diagnostics
-                            url_debug = st.secrets.get("SUPABASE_URL", "NICHT GEFUNDEN")
-                            st.divider()
-                            st.write("**Diagnostics:**")
-                            if url_debug != "NICHT GEFUNDEN":
-                                # Mask the project ID but show the first/last chars
-                                masked_url = url_debug[:12] + "..." + url_debug[-12:] if len(url_debug) > 15 else "***"
-                                st.code(f"Detected URL (masked): {masked_url}")
-                                st.info("💡 Falls die URL oben merkwürdig aussieht (z.B. doppeltes 'https' oder Anführungszeichen), korrigiere sie bitte in den Secrets.")
-                            else:
-                                st.error("❌ `SUPABASE_URL` wurde in den Secrets überhaupt nicht gefunden.")
-                        else:
-                            st.error(f"Fehler beim Speichern: {str(e)}")
-                            st.info("💡 Tipp: Prüfe ob RLS für die 'waitlist' Tabelle deaktiviert ist oder eine 'Enable Insert' Policy existiert.")
+                        st.error(f"Fehler beim Speichern: {str(e)}")
+                        st.info("💡 Tipp: Falls es ein Verbindungsfehler ist, prüfe deine SUPABASE_URL in den Secrets. Prüfe auch, ob RLS für die 'waitlist' Tabelle deaktiviert ist.")
                 else:
                     st.warning("Waitlist aktuell nicht verfügbar.")
             else:
