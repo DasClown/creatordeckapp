@@ -78,44 +78,44 @@ def run_instagram_sync(profile_url, supabase):
     params = {"url": profile_url}
 
     try:
-        response = requests.get(api_url, headers=headers, params=params)
-        if response.status_code == 200:
-            data = response.json().get("data", {})
-            
-            # Daten-Payload für Supabase basierend auf API-Struktur
-            stats_payload = {
-                "user_id": st.session_state.get('user_email', 'unknown'),
-                "platform": "instagram",
-                "handle": data.get("screenName"),
-                "followers": data.get("usersCount"),
-                "engagement_rate": data.get("avgER"),
-                "avg_likes": data.get("avgLikes"),
-                "quality_score": data.get("qualityScore")
-            }
-            
-            # Speichern in die Tabelle stats_history
-            supabase.table("stats_history").insert(stats_payload).execute()
-            
-            st.success(f"Sync erfolgreich: {data.get('name')} ist jetzt im Core.")
-            return True
-        else:
-            st.error(f"API Fehler: {response.status_code}")
+        with st.spinner("🌀 INITIALIZING CORE SYNC..."):
+            response = requests.get(api_url, headers=headers, params=params)
+            if response.status_code == 200:
+                data = response.json().get("data", {})
+                
+                # Daten-Payload für Supabase basierend auf API-Struktur
+                stats_payload = {
+                    "user_id": st.session_state.get('user_email', 'unknown'),
+                    "platform": "instagram",
+                    "handle": data.get("screenName"),
+                    "followers": data.get("usersCount"),
+                    "engagement_rate": data.get("avgER"),
+                    "avg_likes": data.get("avgLikes"),
+                    "quality_score": data.get("qualityScore")
+                }
+                
+                # Speichern in die Tabelle stats_history
+                supabase.table("stats_history").insert(stats_payload).execute()
+                
+                st.success(f"SYNC COMPLETE: {data.get('name')} ist jetzt im Core.")
+                return True
+            else:
+                st.error(f"API ERROR: {response.status_code}")
     except Exception as e:
-        st.error(f"Verbindungsfehler: {e}")
+        st.error(f"CONNECTION FAILED: {e}")
     return False
 
 def render_instagram_sync(supabase):
-    """UI Komponente für den Instagram Core Sync"""
-    st.markdown("### 🌀 Instagram Core Sync")
-    user_url = st.text_input("Instagram URL einfügen", placeholder="https://www.instagram.com/therock/")
+    """UI Komponente für den Instagram Core Sync (In Sidebar oder Landing)"""
+    st.markdown("### 🌀 SYSTEM CONTROL")
+    user_url = st.text_input("INSTAGRAM URL", placeholder="https://instagram.com/...", key="side_url")
 
-    if st.button("START INITIALIZATION"):
+    if st.button("EXECUTE SYNC"):
         if user_url:
-            with st.spinner("🌀 Initialisiere Deep-Sync mit CONTENT CORE Engine..."):
-                if run_instagram_sync(user_url, supabase):
-                    st.rerun()
+            if run_instagram_sync(user_url, supabase):
+                st.rerun()
         else:
-            st.warning("E-Mail oder URL erforderlich.")
+            st.warning("URL erforderlich.")
 
 # --- SETUP ---
 st.set_page_config(
@@ -175,13 +175,20 @@ def render_styles():
             border-radius: 0px !important;
             font-weight: 500 !important;
             padding: 0.5rem 2rem !important;
-            transition: 0.2s !important;
+            transition: 0.3s !important;
             text-transform: uppercase;
             letter-spacing: 1px;
+            width: 100%;
         }
         .stButton>button:hover {
             background-color: #FFFFFF !important;
             color: #000000 !important;
+        }
+
+        /* Metric Styling */
+        .stMetric { 
+            border-left: 1px solid #000 !important; 
+            padding-left: 15px !important; 
         }
 
         /* Input Felder: SHARP & MINIMAL */
@@ -406,21 +413,27 @@ def render_viral_share():
 
 # --- DASHBOARD & NAVIGATION ---
 def render_dashboard_layout():
-    with st.sidebar:
-        st.image("assets/logo_full.jpg", use_container_width=True)
-        st.markdown("<div style='margin-top: -20px;'></div>", unsafe_allow_html=True)
-        st.info("🚀 ALPHA ACCESS: FREE FOREVER")
-        page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "DEMO"])
-        
-        st.divider()
-        if st.button("LOGOUT"):
-            st.session_state.authenticated = False
-            st.rerun()
-
     supabase = init_supabase()
     if not supabase:
         st.error("⚠️ Supabase nicht konfiguriert.")
         return
+
+    with st.sidebar:
+        st.image("assets/logo_full.jpg", use_container_width=True)
+        st.markdown("<div style='margin-top: -20px;'></div>", unsafe_allow_html=True)
+        st.info("🚀 ALPHA ACCESS: FREE FOREVER")
+        
+        # Navigation
+        page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "DEMO"])
+        
+        st.markdown("---")
+        # Sync in Sidebar integriert
+        render_instagram_sync(supabase)
+        
+        st.markdown("---")
+        if st.button("LOGOUT"):
+            st.session_state.authenticated = False
+            st.rerun()
 
     if page == "DASHBOARD":
         render_dashboard(supabase)
@@ -473,12 +486,32 @@ def render_dashboard(supabase):
 
             if latest_stats.data:
                 s = latest_stats.data[0]
-                col1, col2, col3 = st.columns(3)
-                col1.metric("Follower", f"{s.get('followers', 0):,}")
-                col2.metric("ER", f"{s.get('engagement_rate', 0):.2%}")
-                col3.metric("Score", f"{s.get('quality_score', 0):.1f}/100")
+                
+                # KPI Sektion (4 Spalten)
+                col1, col2, col3, col4 = st.columns(4)
+                col1.metric("FOLLOWERS", f"{s.get('followers', 0):,}")
+                col2.metric("ENGAGEMENT", f"{s.get('engagement_rate', 0):.2%}")
+                col3.metric("AVG LIKES", f"{s.get('avg_likes', 0):,}")
+                col4.metric("CORE SCORE", f"{s.get('quality_score', 0):.1f}/100")
+
+                st.markdown("### 📈 FOLLOWER TREND")
+                # Chart (Verlauf aus allen Einträgen)
+                all_res = supabase.table("stats_history")\
+                    .select("created_at", "followers")\
+                    .eq("user_id", user_id)\
+                    .order("created_at")\
+                    .execute()
+                
+                if len(all_res.data) > 1:
+                    df = pd.DataFrame(all_res.data)
+                    st.line_chart(df.set_index("created_at")["followers"])
+                else:
+                    st.info("Sammle weitere Datenpunkte für Trend-Analysen...")
+                
+                st.markdown("---")
+                st.markdown(f"**LOGGED AS:** {user_id} | **STATUS:** CORE ACTIVE")
     except Exception as e:
-        st.error(f"Datenbank-Fehler: {e}")
+        st.error(f"DATABASE ERROR: {e}")
         st.info("Hinweis: Stelle sicher, dass die Tabelle 'stats_history' in Supabase existiert.")
 
 # --- MAIN ORCHESTRATION ---
