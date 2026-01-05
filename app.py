@@ -159,10 +159,16 @@ def render_landing_page():
                 supabase = init_supabase()
                 if supabase:
                     try:
-                        supabase.table("waitlist").insert({"email": email}).execute()
-                        st.success("✅ Auf die Warteliste gesetzt.")
-                    except:
-                        st.error("Fehler beim Speichern. Bitte versuche es später erneut.")
+                        # Check if email already exists
+                        existing = supabase.table("waitlist").select("email").eq("email", email).execute()
+                        if existing.data and len(existing.data) > 0:
+                            st.info("ℹ️ Du bist bereits auf der Warteliste!")
+                        else:
+                            supabase.table("waitlist").insert({"email": email}).execute()
+                            st.success("✅ Auf die Warteliste gesetzt.")
+                    except Exception as e:
+                        st.error(f"Fehler beim Speichern: {str(e)}")
+                        st.info("💡 Tipp: Prüfe ob RLS für die 'waitlist' Tabelle deaktiviert ist oder eine 'Enable Insert' Policy existiert.")
                 else:
                     st.warning("Waitlist aktuell nicht verfügbar.")
             else:
