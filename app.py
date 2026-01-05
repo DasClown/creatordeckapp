@@ -108,7 +108,8 @@ def run_instagram_sync(profile_url, supabase):
 def render_instagram_sync(supabase):
     """UI Komponente für den Instagram Core Sync (In Sidebar oder Landing)"""
     st.markdown("### 🌀 SYSTEM CONTROL")
-    user_url = st.text_input("INSTAGRAM URL", placeholder="https://instagram.com/...", key="side_url")
+    # Eindeutiger Key 'side_url_input' verhindert den Fehler
+    user_url = st.text_input("INSTAGRAM URL", placeholder="https://instagram.com/...", key="side_url_input")
 
     if st.button("EXECUTE SYNC"):
         if user_url:
@@ -398,19 +399,6 @@ def render_viral_share():
     with col1:
         st.markdown("### 🐦 TWITTER/X")
         share_twitter = "https://twitter.com/intent/tweet?text=Gerade%20das%20neue%20Terminal%20von%20content-core.io%20entdeckt.%20Endlich%20Ordnung%20im%20Workflow.%20%F0%9F%94%A5"
-        st.markdown(f"<a href='{share_twitter}' target='_blank' style='text-decoration:none;'><div style='padding:15px; border:1px solid #000; color:#000; text-align:center; background:#fff;'>TWEET & UNLOCK</div></a>", unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("### 🔴 REDDIT")
-        share_reddit = "https://www.reddit.com/submit?title=CONTENT%20CORE%20-%20Advanced%20Analytics%20for%20Creators&url=https://www.content-core.io"
-        st.markdown(f"<a href='{share_reddit}' target='_blank' style='text-decoration:none;'><div style='padding:15px; border:1px solid #000; color:#000; text-align:center; background:#fff;'>POST & UNLOCK</div></a>", unsafe_allow_html=True)
-    
-    st.divider()
-    if st.button("✅ ICH HABE GETEILT", use_container_width=True):
-        st.session_state.full_access = True
-        st.success("🎉 Vollzugriff aktiviert!")
-        st.rerun()
-
 # --- DASHBOARD & NAVIGATION ---
 def render_dashboard_layout():
     supabase = init_supabase()
@@ -487,12 +475,11 @@ def render_dashboard(supabase):
             if latest_stats.data:
                 s = latest_stats.data[0]
                 
-                # KPI Sektion (4 Spalten)
-                col1, col2, col3, col4 = st.columns(4)
-                col1.metric("FOLLOWERS", f"{s.get('followers', 0):,}")
-                col2.metric("ENGAGEMENT", f"{s.get('engagement_rate', 0):.2%}")
-                col3.metric("AVG LIKES", f"{s.get('avg_likes', 0):,}")
-                col4.metric("CORE SCORE", f"{s.get('quality_score', 0):.1f}/100")
+                # Metriken (3 Spalten wie im Snippet)
+                c1, c2, c3 = st.columns(3)
+                c1.metric("FOLLOWERS", f"{int(s['followers']):,}")
+                c2.metric("ENGAGEMENT", f"{float(s['engagement_rate']):.2%}")
+                c3.metric("CORE SCORE", f"{float(s['quality_score']):.1f}/100")
 
                 st.markdown("### 📈 FOLLOWER TREND")
                 # Chart (Verlauf aus allen Einträgen)
@@ -504,15 +491,16 @@ def render_dashboard(supabase):
                 
                 if len(all_res.data) > 1:
                     df = pd.DataFrame(all_res.data)
+                    df['created_at'] = pd.to_datetime(df['created_at'])
                     st.line_chart(df.set_index("created_at")["followers"])
                 else:
-                    st.info("Sammle weitere Datenpunkte für Trend-Analysen...")
+                    st.info("Keine Daten im Core. Nutze die Sidebar für den ersten Sync.")
                 
                 st.markdown("---")
                 st.markdown(f"**LOGGED AS:** {user_id} | **STATUS:** CORE ACTIVE")
     except Exception as e:
         st.error(f"DATABASE ERROR: {e}")
-        st.info("Hinweis: Stelle sicher, dass die Tabelle 'stats_history' in Supabase existiert.")
+        st.info("Hinweis: Prüfe, ob die Tabelle 'stats_history' existiert.")
 
 # --- MAIN ORCHESTRATION ---
 def main():
