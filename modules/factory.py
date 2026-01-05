@@ -3,7 +3,7 @@ import pandas as pd
 import google.generativeai as genai
 
 def render_factory(supabase):
-    st.title("🏭 CONTENT FACTORY")
+    st.title("FACTORY")
     
     # Echtzeit-Daten aus der neuen Historie abrufen
     try:

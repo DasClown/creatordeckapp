@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 def render_deals():
-    st.title("🤝 DEAL FLOW")
+    st.title("DEALS")
     
     col1, col2, col3 = st.columns(3)
     col1.metric("Pipeline Value", "24.500 €")

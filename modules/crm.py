@@ -3,7 +3,7 @@ import pandas as pd
 from supabase import create_client
 
 def render_crm(supabase):
-    st.title("💎 RELATIONSHIPS (CRM)")
+    st.title("CRM")
     
     # Daten aus Supabase laden
     response = supabase.table("deals").select("*").execute()

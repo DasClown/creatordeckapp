@@ -4,7 +4,7 @@ import numpy as np
 import plotly.express as px
 
 def render_demo():
-    st.title("🧪 SANDBOX / DEMO")
+    st.title("DEMO")
     st.info("Hier können neue Features getestet werden, ohne die Live-Daten zu beeinflussen.")
     
     col1, col2 = st.columns(2)

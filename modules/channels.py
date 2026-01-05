@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 def render_channels():
-    st.title("📊 MULTI-CHANNEL ANALYTICS")
+    st.title("CHANNELS")
     
     platform = st.tabs(["YOUTUBE", "TIKTOK", "INSTAGRAM"])
     

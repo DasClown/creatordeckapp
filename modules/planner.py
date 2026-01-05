@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 def render_planner(supabase):
-    st.title("📅 CONTENT PLANNER")
+    st.title("PLANNER")
 
     res = supabase.table("content_plan").select("*").execute()
     df_plan = pd.DataFrame(res.data)

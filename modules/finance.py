@@ -4,7 +4,7 @@ import plotly.express as px
 from datetime import datetime
 
 def render_finance(supabase):
-    st.title("💰 FINANCE CONTROL")
+    st.title("FINANCE")
     
     # Daten laden
     res = supabase.table("transactions").select("*").execute()

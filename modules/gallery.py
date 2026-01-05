@@ -4,7 +4,7 @@ import io
 import uuid
 
 def render_gallery(supabase):
-    st.title("🖼️ MEDIA HUB & STORAGE")
+    st.title("GALLERY")
     
     col1, col2 = st.columns([1, 1])
     
