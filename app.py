@@ -3,7 +3,7 @@ import toml
 import os
 
 # Module importieren
-from modules import crm, finance, planner, factory, gallery, channels, deals
+from modules import crm, finance, planner, factory, gallery, channels, deals, demo
 import pandas as pd
 import google.generativeai as genai
 
@@ -27,7 +27,7 @@ if not st.session_state.password_correct:
 with st.sidebar:
     st.title("CreatorOS")
     page = st.radio("NAVIGATION", [
-        "DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER"
+        "DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "DEMO"
     ])
     
     with st.expander("⚙️ SETTINGS"):
@@ -70,6 +70,9 @@ elif page == "FINANCE":
 
 elif page == "PLANNER":
     planner.render_planner()
+
+elif page == "DEMO":
+    demo.render_demo()
 
 elif page == "FACTORY":
     # Gemini API konfigurieren
