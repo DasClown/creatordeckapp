@@ -206,7 +206,7 @@ def render_landing_page():
                             supabase.table("waitlist").insert({"email": email}).execute()
                             
                             # 2. Bestätigungs-Link generieren
-                            confirmation_url = f"https://creatordeckapp.streamlit.app/?verify={email}"
+                            confirmation_url = f"https://www.creator.fans/?verify={email}"
                             
                             # 3. E-Mail versenden via Resend
                             if send_verification_email(email, confirmation_url):
@@ -214,7 +214,8 @@ def render_landing_page():
                             else:
                                 st.warning("⚠️ E-Mail konnte nicht gesendet werden, aber dein Eintrag wurde gespeichert.")
                             
-                            st.info("🚀 Bitte prüfe dein Postfach (auch Spam).")
+                            st.info("🚀 ALPHA DEBUG: Bitte prüfe dein Postfach (auch Spam). Link: " + confirmation_url)
+                            # In einer Alpha-Phase können wir den Link zum Testen anzeigen
                     except Exception as e:
                         st.error(f"Fehler beim Speichern: {str(e)}")
                         st.info("💡 Tipp: Falls es ein Verbindungsfehler ist, prüfe deine SUPABASE_URL in den Secrets. Prüfe auch, ob RLS für die 'waitlist' Tabelle deaktiviert ist.")
@@ -285,33 +286,63 @@ if st.session_state.view == "landing":
     render_landing_page()
     st.stop()
 
-# Login Check (Email-Gated)
+# Login Check (Email-Gated Auth Interface)
 if not st.session_state.password_correct:
-    st.markdown("### 🔒 TERMINAL ACCESS")
-    login_email = st.text_input("Registrierte E-Mail", placeholder="name@domain.com")
+    st.markdown("<h1 style='text-align: center; margin-bottom: 40px;'>CREATOR.FANS</h1>", unsafe_allow_html=True)
     
-    if st.button("BOOT SYSTEM"):
-        if login_email:
-            supabase = init_supabase()
-            if supabase:
-                try:
-                    # Check if email is confirmed in waitlist
-                    check = supabase.table("waitlist").select("email")\
-                            .eq("email", login_email)\
-                            .eq("is_confirmed", True).execute()
-                    
-                    if check.data and len(check.data) > 0:
-                        st.session_state.password_correct = True
-                        st.success("🔓 System Boot Sequence Initialized.")
-                        st.rerun()
-                    else:
-                        st.error("❌ E-Mail nicht bestätigt oder nicht registriert. Bitte prüfe dein Postfach.")
-                except Exception as e:
-                    st.error(f"Datenbank-Fehler: {e}")
+    auth_tab1, auth_tab2 = st.tabs(["REGISTRIERUNG", "LOGIN"])
+    
+    with auth_tab1:
+        st.markdown("### ZUGANG ANFORDERN")
+        new_email = st.text_input("E-Mail für Warteliste", key="reg_email")
+        if st.button("ZUGANG ANFORDERN", key="reg_btn"):
+            if new_email:
+                supabase = init_supabase()
+                if supabase:
+                    try:
+                        # Check existenz
+                        existing = supabase.table("waitlist").select("email").eq("email", new_email).execute()
+                        if existing.data and len(existing.data) > 0:
+                            st.info("ℹ️ Du bist bereits auf der Warteliste!")
+                        else:
+                            # In DB speichern
+                            supabase.table("waitlist").insert({"email": new_email, "is_confirmed": False}).execute()
+                            # E-Mail versenden
+                            conf_url = f"https://www.creator.fans/?verify={new_email}"
+                            if send_verification_email(new_email, conf_url):
+                                st.success(f"✅ Bestätigungs-Link an {new_email} gesendet. Bitte prüfe dein Postfach.")
+                                st.info(f"DEBUG LINK: {conf_url}")
+                    except Exception as e:
+                        st.error(f"Fehler: {e}")
+                else:
+                    st.error("Datenbank nicht erreichbar.")
             else:
-                st.error("Supabase-Verbindung fehlgeschlagen.")
-        else:
-            st.warning("Bitte E-Mail eingeben.")
+                st.error("Bitte E-Mail eingeben.")
+
+    with auth_tab2:
+        st.markdown("### TERMINAL LOGIN")
+        login_email = st.text_input("Registrierte E-Mail", placeholder="name@domain.com", key="login_email_input")
+        if st.button("BOOT SYSTEM", key="login_btn"):
+            if login_email:
+                supabase = init_supabase()
+                if supabase:
+                    try:
+                        # Prüfe ob confirmed
+                        check = supabase.table("waitlist").select("is_confirmed").eq("email", login_email).execute()
+                        
+                        if check.data and len(check.data) > 0 and check.data[0]['is_confirmed']:
+                            st.session_state.password_correct = True
+                            st.session_state.user_email = login_email
+                            st.success("🔓 System Boot Sequence Initialized.")
+                            st.rerun()
+                        else:
+                            st.error("❌ Zugriff verweigert. E-Mail nicht bestätigt oder nicht registriert.")
+                    except Exception as e:
+                        st.error(f"Datenbank-Fehler: {e}")
+                else:
+                    st.error("Supabase-Verbindung fehlgeschlagen.")
+            else:
+                st.warning("Bitte E-Mail eingeben.")
     st.stop()
 
 # --- VIRAL SHARE-TO-UNLOCK ---
