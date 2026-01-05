@@ -6,6 +6,7 @@ import os
 from modules import crm, finance, planner, factory, gallery, channels, deals, demo
 import pandas as pd
 import google.generativeai as genai
+from supabase import create_client
 
 # --- SETUP ---
 st.set_page_config(page_title="CreatorOS", layout="wide", page_icon="⚫")
@@ -132,6 +133,15 @@ def get_demo_data():
         'Engagement': [450, 380, 320]
     })
 
+# --- SUPABASE INIT ---
+@st.cache_resource
+def init_supabase():
+    url = st.secrets.get("SUPABASE_URL")
+    key = st.secrets.get("SUPABASE_KEY")
+    if url and key:
+        return create_client(url, key)
+    return None
+
 # --- ROUTING ---
 if page == "DASHBOARD":
     st.title("ANTIGRAVITY DECK 🚀")
@@ -154,7 +164,11 @@ elif page == "DEALS":
     deals.render_deals()
 
 elif page == "CRM":
-    crm.render_crm()
+    supabase = init_supabase()
+    if supabase:
+        crm.render_crm(supabase)
+    else:
+        st.error("⚠️ Supabase nicht konfiguriert. Bitte SUPABASE_URL und SUPABASE_KEY in secrets.toml hinzufügen.")
 
 elif page == "FINANCE":
     finance.render_finance()
