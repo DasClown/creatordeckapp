@@ -97,7 +97,7 @@ def run_instagram_sync(profile_url, supabase):
                 # Speichern in die Tabelle stats_history
                 supabase.table("stats_history").insert(stats_payload).execute()
                 
-                st.success(f"SYNC COMPLETE: {data.get('name')} ist jetzt im Core.")
+                st.success("CORE UPDATED")
                 return True
             else:
                 st.error(f"API ERROR: {response.status_code}")
@@ -108,10 +108,10 @@ def run_instagram_sync(profile_url, supabase):
 def render_instagram_sync(supabase):
     """UI Komponente für den Instagram Core Sync (In Sidebar oder Landing)"""
     st.markdown("### 🌀 SYSTEM CONTROL")
-    # Eindeutiger Key 'side_url_input' verhindert den Fehler
-    user_url = st.text_input("INSTAGRAM URL", placeholder="https://instagram.com/...", key="side_url_input")
+    # Einzigartiger Key: 'unique_sync_input'
+    user_url = st.text_input("INSTAGRAM URL", placeholder="https://instagram.com/...", key="unique_sync_input")
 
-    if st.button("EXECUTE SYNC"):
+    if st.button("START SYNC", key="sync_btn"):
         if user_url:
             if run_instagram_sync(user_url, supabase):
                 st.rerun()
@@ -479,7 +479,7 @@ def render_dashboard(supabase):
                 c1, c2, c3 = st.columns(3)
                 c1.metric("FOLLOWERS", f"{int(s['followers']):,}")
                 c2.metric("ENGAGEMENT", f"{float(s['engagement_rate']):.2%}")
-                c3.metric("CORE SCORE", f"{float(s['quality_score']):.1f}/100")
+                c3.metric("CORE SCORE", f"{float(s['quality_score']):.1f}")
 
                 st.markdown("### 📈 FOLLOWER TREND")
                 # Chart (Verlauf aus allen Einträgen)
