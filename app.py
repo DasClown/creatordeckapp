@@ -152,6 +152,35 @@ if page == "DASHBOARD":
     c2.metric("Engagement", "12.300", "-1.5%")
     c3.metric("Followers", "45.120", "+0.4%")
     
+    # Critical Alerts System
+    supabase = init_supabase()
+    if supabase:
+        from datetime import datetime, timedelta
+        
+        st.divider()
+        st.subheader("⚠️ CRITICAL ALERTS")
+        
+        try:
+            # 1. Deals laden, die bald fällig sind
+            threshold = datetime.now() + timedelta(hours=48)
+            res_deals = supabase.table("deals").select("*").lte("deadline", str(threshold.date())).eq("status", "Closed").execute()
+            
+            # 2. Content Plan laden, um Assets zu prüfen
+            res_plan = supabase.table("content_plan").select("title, platform").execute()
+            planned_titles = [item['title'] for item in res_plan.data] if res_plan.data else []
+
+            alerts_found = False
+            for deal in res_deals.data if res_deals.data else []:
+                # Prüfung: Gibt es einen entsprechenden Eintrag im Content Plan?
+                if deal['brand'] not in str(planned_titles):
+                    st.error(f"**MISSING ASSET:** Für den Deal mit '{deal['brand']}' (Fällig: {deal['deadline']}) wurde noch kein Content geplant!")
+                    alerts_found = True
+                    
+            if not alerts_found:
+                st.success("✅ Alle fälligen Deals sind im Zeitplan. Keine kritischen Warnungen.")
+        except Exception as e:
+            st.warning(f"Alerts konnten nicht geladen werden: {e}")
+    
     st.info("💡 Dashboard-Logik wird hier integriert (Instagram API, Analytics, etc.)")
 
 elif page == "GALLERY":
