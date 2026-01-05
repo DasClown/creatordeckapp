@@ -102,6 +102,7 @@ st.markdown("""
         letter-spacing: -1.5px !important; 
         color: #000000 !important;
         text-transform: uppercase;
+        text-align: center;
     }
     
     /* Buttons: CONTENT CORE SHARP */
@@ -173,11 +174,12 @@ st.markdown("""
 
 # --- LANDING PAGE ---
 def render_landing_page():
-    # Zentrales Logo (Punkt mit Kreisen / Minimalist)
+    # Zentrales Logo (Punkt mit Kreisen)
     st.markdown("<div style='text-align: center; padding: 50px; font-size: 40px; color: #000;'>●</div>", unsafe_allow_html=True)
     
-    st.markdown("<h1 style='text-align: center;'>CONTENT CORE</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #666; letter-spacing: 2px; font-size: 14px; margin-bottom: 50px;'>SYSTEM INITIALIZATION</p>", unsafe_allow_html=True)
+    st.markdown("<h1>CONTENT CORE</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #666; letter-spacing: 2px; font-size: 14px;'>SYSTEM INITIALIZATION</p>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom: 50px;'></div>", unsafe_allow_html=True)
 
     col1, col2 = st.columns([1, 1])
 
