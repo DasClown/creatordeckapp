@@ -325,40 +325,83 @@ def init_supabase():
 if page == "DASHBOARD":
     st.title("ANTIGRAVITY DECK 🚀")
     
-    # Metriken
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Reach", "125.400", "+8.2%")
-    c2.metric("Engagement", "12.300", "-1.5%")
-    c3.metric("Followers", "45.120", "+0.4%")
-    
-    # Critical Alerts System
+    # Supabase initialisieren
     supabase = init_supabase()
+    
     if supabase:
-        from datetime import datetime, timedelta
+        # Prüfe auf vorhandene Daten (user_id = "default" für Single-User)
+        user_id = "default"
+        stats = supabase.table("stats_history").select("*").eq("user_id", user_id).execute()
         
-        st.divider()
-        st.subheader("⚠️ CRITICAL ALERTS")
-        
-        try:
-            # 1. Deals laden, die bald fällig sind
-            threshold = datetime.now() + timedelta(hours=48)
-            res_deals = supabase.table("deals").select("*").lte("deadline", str(threshold.date())).eq("status", "Closed").execute()
+        if not stats.data or len(stats.data) == 0:
+            # Onboarding Wizard
+            st.markdown("### 🛠 System Initialization")
+            st.info("Willkommen im Terminal. Um die Analyse-Engine zu starten, benötigen wir die ersten Datenpunkte.")
             
-            # 2. Content Plan laden, um Assets zu prüfen
-            res_plan = supabase.table("content_plan").select("title, platform").execute()
-            planned_titles = [item['title'] for item in res_plan.data] if res_plan.data else []
-
-            alerts_found = False
-            for deal in res_deals.data if res_deals.data else []:
-                # Prüfung: Gibt es einen entsprechenden Eintrag im Content Plan?
-                if deal['brand'] not in str(planned_titles):
-                    st.error(f"**MISSING ASSET:** Für den Deal mit '{deal['brand']}' (Fällig: {deal['deadline']}) wurde noch kein Content geplant!")
-                    alerts_found = True
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("#### Option A: Instagram Sync")
+                st.caption("Verbinde dein Instagram-Konto für automatische Daten-Updates.")
+                if st.button("📱 Connect Instagram", use_container_width=True):
+                    st.info("📖 Anleitung: Gehe zu Settings → Help & Docs für das Setup-Tutorial")
+                    st.session_state.setup_step = "ig_sync"
                     
-            if not alerts_found:
-                st.success("✅ Alle fälligen Deals sind im Zeitplan. Keine kritischen Warnungen.")
-        except Exception as e:
-            st.warning(f"Alerts konnten nicht geladen werden: {e}")
+            with col2:
+                st.markdown("#### Option B: Manual Data Entry")
+                st.caption("Starte mit manuellen Daten und synchronisiere später.")
+                with st.expander("Eckdaten manuell eingeben"):
+                    followers = st.number_input("Follower Anzahl", min_value=0, value=1000)
+                    avg_likes = st.number_input("Ø Likes pro Post", min_value=0, value=100)
+                    if st.button("Initialize with Manual Data"):
+                        try:
+                            supabase.table("stats_history").insert({
+                                "platform": "instagram",
+                                "metric": "followers",
+                                "value": followers,
+                                "user_id": user_id
+                            }).execute()
+                            supabase.table("stats_history").insert({
+                                "platform": "instagram",
+                                "metric": "avg_likes",
+                                "value": avg_likes,
+                                "user_id": user_id
+                            }).execute()
+                            st.success("✅ Daten initialisiert! Lade neu...")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Fehler beim Speichern: {e}")
+        else:
+            # Main Dashboard mit Metriken
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Reach", "125.400", "+8.2%")
+            c2.metric("Engagement", "12.300", "-1.5%")
+            c3.metric("Followers", "45.120", "+0.4%")
+            
+            # Critical Alerts System
+            from datetime import datetime, timedelta
+            
+            st.divider()
+            st.subheader("⚠️ CRITICAL ALERTS")
+            
+            try:
+                threshold = datetime.now() + timedelta(hours=48)
+                res_deals = supabase.table("deals").select("*").lte("deadline", str(threshold.date())).eq("status", "Closed").execute()
+                res_plan = supabase.table("content_plan").select("title, platform").execute()
+                planned_titles = [item['title'] for item in res_plan.data] if res_plan.data else []
+
+                alerts_found = False
+                for deal in res_deals.data if res_deals.data else []:
+                    if deal['brand'] not in str(planned_titles):
+                        st.error(f"**MISSING ASSET:** Für den Deal mit '{deal['brand']}' (Fällig: {deal['deadline']}) wurde noch kein Content geplant!")
+                        alerts_found = True
+                        
+                if not alerts_found:
+                    st.success("✅ Alle fälligen Deals sind im Zeitplan. Keine kritischen Warnungen.")
+            except Exception as e:
+                st.warning(f"Alerts konnten nicht geladen werden: {e}")
+    else:
+        st.error("⚠️ Supabase nicht konfiguriert.")
     
     st.info("💡 Dashboard-Logik wird hier integriert (Instagram API, Analytics, etc.)")
 
