@@ -3,7 +3,7 @@ import toml
 import os
 
 # Module importieren
-from modules import crm, finance, planner, factory, gallery, channels
+from modules import crm, finance, planner, factory, gallery, channels, deals
 import pandas as pd
 import google.generativeai as genai
 
@@ -26,7 +26,7 @@ if not st.session_state.password_correct:
 # --- NAVIGATION ---
 with st.sidebar:
     st.title("CreatorOS")
-    page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "FINANCE", "PLANNER"])
+    page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "DEALS", "CRM", "FINANCE", "PLANNER"])
     st.divider()
     if st.button("LOGOUT"):
         st.session_state.password_correct = False
@@ -49,6 +49,9 @@ elif page == "GALLERY":
 
 elif page == "CHANNELS":
     channels.render_channels()
+
+elif page == "DEALS":
+    deals.render_deals()
 
 elif page == "CRM":
     crm.render_crm()
