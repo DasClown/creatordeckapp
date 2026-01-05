@@ -35,33 +35,26 @@ def init_supabase():
         st.error(f"🔧 Interner Fehler bei Supabase-Initialisierung: {e}")
         return None
 
-def send_verification_email(email, confirmation_url):
+def send_verification_email(email):
     """Send verification email via Resend"""
     try:
         resend.api_key = st.secrets.get("RESEND_API_KEY", "re_P9igZ7ze_L3JmWkdRe3KEJWW9FBpTP6aT")
-        
-        r = resend.Emails.send({
-            "from": "CREATOR.FANS <onboarding@resend.dev>",
+        response = resend.Emails.send({
+            "from": "onboarding@resend.dev", # Pflicht im Sandbox-Modus!
             "to": email,
-            "subject": "Verifiziere deinen Zugang zu CREATOR.FANS",
-            "html": f"""
-                <div style='font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee;'>
-                    <h2 style='font-weight: 300;'>Willkommen bei CREATOR.FANS</h2>
-                    <p>Klicke auf den folgenden Link, um deine E-Mail zu bestätigen und dein Terminal freizuschalten:</p>
-                    <a href='{confirmation_url}' style='display: inline-block; padding: 10px 20px; background-color: #000; color: #fff; text-decoration: none; margin: 20px 0;'>ZUGANG VERIFIZIEREN</a>
-                    <p style='color: #666; font-size: 12px;'>Falls du dich nicht registriert hast, kannst du diese Mail ignorieren.</p>
-                </div>
-            """
+            "subject": "Bestätige deinen CONTENT CORE Zugang",
+            "html": f"<a href='https://www.content-core.io/?verify={email}'>VERIFIZIEREN</a>"
         })
+        print(f"Resend Response: {response}") # Erscheint in den Streamlit Logs
         return True
     except Exception as e:
-        st.error(f"Fehler beim Senden der Mail: {e}")
+        st.error(f"Kritischer E-Mail Fehler: {e}")
         return False
 
 # --- SETUP ---
 st.set_page_config(
-    page_title="CREATOR.FANS",
-    page_icon="🚀",
+    page_title="CONTENT CORE",
+    page_icon="●",
     layout="wide"
 )
 
@@ -70,10 +63,10 @@ def render_head():
     """Render SEO and Meta Tags"""
     st.markdown("""
         <head>
-            <title>CREATOR.FANS | Advanced Analytics. Zero Cost. High Impact.</title>
+            <title>CONTENT CORE | Advanced Analytics. Zero Cost. High Impact.</title>
             <meta name="description" content="Advanced Analytics für Creator. Komplett kostenlos. Alpha Access für Early Adopters.">
-            <meta name="keywords" content="Creator Analytics, Free Creator Tools, Fan Economy, Creator CRM, Content Analytics">
-            <meta property="og:title" content="CREATOR.FANS">
+            <meta name="keywords" content="Content Core, Creator Analytics, Free Creator Tools, Fan Economy, Creator CRM, Content Analytics">
+            <meta property="og:title" content="CONTENT CORE">
             <meta property="og:description" content="Advanced Analytics. Zero Cost. High Impact.">
             <meta property="og:type" content="website">
             <meta name="robots" content="index, follow">
@@ -208,24 +201,19 @@ def render_landing_page():
                             else:
                                 st.warning("ℹ️ Du bist bereits auf der Warteliste, aber noch nicht bestätigt.")
                                 if st.button("BESTÄTIGUNGS-LINK ERNEUT SENDEN", key="resend_landing"):
-                                    c_url = f"https://www.creator.fans/?verify={email}"
-                                    if send_verification_email(email, c_url):
+                                    if send_verification_email(email):
                                         st.success(f"✅ Link erneut an {email} gesendet.")
-                                        st.info(f"DEBUG LINK: {c_url}")
                         else:
                             # 1. In DB speichern (is_confirmed ist default false)
                             supabase.table("waitlist").insert({"email": email}).execute()
                             
-                            # 2. Bestätigungs-Link generieren
-                            confirmation_url = f"https://www.creator.fans/?verify={email}"
-                            
-                            # 3. E-Mail versenden via Resend
-                            if send_verification_email(email, confirmation_url):
+                            # 2. E-Mail versenden via Resend
+                            if send_verification_email(email):
                                 st.success(f"✅ Bestätigungs-Link wurde an {email} gesendet.")
                             else:
                                 st.warning("⚠️ E-Mail konnte nicht gesendet werden, aber dein Eintrag wurde gespeichert.")
                             
-                            st.info("🚀 ALPHA DEBUG: Bitte prüfe dein Postfach (auch Spam). Link: " + confirmation_url)
+                            st.info(f"🚀 ALPHA DEBUG: Bitte prüfe dein Postfach. Link: https://www.content-core.io/?verify={email}")
                             # In einer Alpha-Phase können wir den Link zum Testen anzeigen
                     except Exception as e:
                         st.error(f"Fehler beim Speichern: {str(e)}")
@@ -274,7 +262,7 @@ def render_landing_page():
 
 # --- VIEW MANAGEMENT & AUTH ---
 def render_auth_interface():
-    st.markdown("<h1 style='text-align: center; margin-bottom: 40px;'>CREATOR.FANS</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; margin-bottom: 40px;'>CONTENT CORE</h1>", unsafe_allow_html=True)
     
     auth_tab1, auth_tab2 = st.tabs(["REGISTRIERUNG", "LOGIN"])
     
@@ -294,13 +282,11 @@ def render_auth_interface():
                             else:
                                 st.warning("ℹ️ Du bist bereits auf der Warteliste, aber noch nicht bestätigt.")
                                 if st.button("BESTÄTIGUNGS-LINK ERNEUT SENDEN"):
-                                    conf_url = f"https://www.creator.fans/?verify={new_email}"
-                                    if send_verification_email(new_email, conf_url):
+                                    if send_verification_email(new_email):
                                         st.success(f"✅ Link erneut an {new_email} gesendet.")
                         else:
                             supabase.table("waitlist").insert({"email": new_email, "is_confirmed": False}).execute()
-                            conf_url = f"https://www.creator.fans/?verify={new_email}"
-                            if send_verification_email(new_email, conf_url):
+                            if send_verification_email(new_email):
                                 st.success(f"✅ Bestätigungs-Link an {new_email} gesendet. Bitte prüfe dein Postfach.")
                     except Exception as e:
                         st.error(f"Fehler: {e}")
@@ -338,7 +324,7 @@ def render_viral_share():
         <div style='padding: 60px 20px; text-align: center;'>
             <h2 style='font-weight: 300; margin-bottom: 20px;'>🔓 ACTIVATE FULL ENGINE</h2>
             <p style='color: #666; margin-bottom: 30px; font-weight: 300;'>
-                Teile CREATOR.FANS auf Social Media und erhalte sofortigen Vollzugriff.<br>
+                Teile CONTENT CORE auf Social Media und erhalte sofortigen Vollzugriff.<br>
                 Kostenlos. Für immer.
             </p>
         </div>
@@ -347,12 +333,12 @@ def render_viral_share():
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("### 🐦 TWITTER/X")
-        share_twitter = "https://twitter.com/intent/tweet?text=Gerade%20das%20neue%20Terminal%20von%20creator.fans%20entdeckt.%20Endlich%20Ordnung%20im%20Workflow.%20%F0%9F%94%A5"
+        share_twitter = "https://twitter.com/intent/tweet?text=Gerade%20das%20neue%20Terminal%20von%20content-core.io%20entdeckt.%20Endlich%20Ordnung%20im%20Workflow.%20%F0%9F%94%A5"
         st.markdown(f"<a href='{share_twitter}' target='_blank' style='text-decoration:none;'><div style='padding:15px; border:1px solid #000; color:#000; text-align:center; background:#fff;'>TWEET & UNLOCK</div></a>", unsafe_allow_html=True)
     
     with col2:
         st.markdown("### 🔴 REDDIT")
-        share_reddit = "https://www.reddit.com/submit?title=CREATOR.FANS%20-%20Advanced%20Analytics%20for%20Creators&url=https://creator.fans"
+        share_reddit = "https://www.reddit.com/submit?title=CONTENT%20CORE%20-%20Advanced%20Analytics%20for%20Creators&url=https://www.content-core.io"
         st.markdown(f"<a href='{share_reddit}' target='_blank' style='text-decoration:none;'><div style='padding:15px; border:1px solid #000; color:#000; text-align:center; background:#fff;'>POST & UNLOCK</div></a>", unsafe_allow_html=True)
     
     st.divider()
@@ -364,7 +350,7 @@ def render_viral_share():
 # --- DASHBOARD & NAVIGATION ---
 def render_dashboard_layout():
     with st.sidebar:
-        st.markdown("<h1 style='letter-spacing: -1px;'>CREATOR.FANS</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='letter-spacing: -1px;'>CONTENT CORE</h1>", unsafe_allow_html=True)
         st.info("🚀 ALPHA ACCESS: FREE FOREVER")
         page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "DEMO"])
         
