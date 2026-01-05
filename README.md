@@ -144,7 +144,7 @@ creatorOS/
 2. Session bleibt über alle Pages erhalten
 
 ### Admin-Zugang
-Der User `janick@icanhasbucket.de` hat Admin-Rechte:
+Der User `admin@creator.tech` hat Admin-Rechte:
 - Sieht Admin-Panel in Einstellungen
 - Kann User zu PRO upgraden/downgraden
 - Sieht alle User-Daten
@@ -307,7 +307,7 @@ pip install --upgrade -r requirements.txt
 
 ## 📧 Support
 
-- **Email:** janick@icanhasbucket.de
+- **Email:** contact@creator.tech
 - **GitHub Issues:** [CreatorOS Issues](https://github.com/DasClown/CreatorOS/issues)
 - **Website:** [creator.tech](https://creator.tech)
 

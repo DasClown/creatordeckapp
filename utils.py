@@ -15,20 +15,20 @@ except ImportError:
 # =============================================================================
 # CONSTANTS
 # =============================================================================
-ADMIN_EMAIL = "janick@icanhasbucket.de"
+ADMIN_EMAIL = "admin@creator.tech"
 PAYMENT_LINK = "https://buy.stripe.com/28E8wO0W59Y46rM8rG6J200"
 
 IMPRESSUM_TEXT = """
 **Angaben gemäß § 5 TMG:**
 
-CreatorDeck / Janick Thum
+CREATOR.TECH
 [Deine Adresse hier]
 
 **Kontakt:**  
-E-Mail: janick@icanhasbucket.de
+E-Mail: admin@creator.tech
 
 **Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:**  
-Janick Thum  
+CREATOR.TECH
 [Adresse]
 """
 
@@ -48,7 +48,7 @@ Wir nutzen Supabase für Authentifizierung und Einstellungen. Details: https://s
 Sie haben jederzeit das Recht auf Auskunft, Löschung und Berichtigung Ihrer Daten.
 
 **Kontakt:**  
-janick@icanhasbucket.de
+admin@creator.tech
 """
 
 # =============================================================================
