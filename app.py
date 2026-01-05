@@ -172,6 +172,18 @@ def render_landing_page():
 
     st.divider()
     
+    # Trust & Privacy Badge
+    st.markdown("""
+        <div style='background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;'>
+            <h4 style='margin: 0 0 10px 0; font-weight: 500;'>🔒 Data Privacy</h4>
+            <p style='margin: 0; color: #666; font-size: 14px; line-height: 1.6;'>
+                Deine Daten werden verschlüsselt in einer dedizierten Supabase-Instanz gespeichert. 
+                Wir haben <strong>keinen Zugriff</strong> auf deine Passwörter; die Verbindung erfolgt über 
+                öffentliche Schnittstellen oder manuellen Import.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
     # Admin Access (versteckt)
     c1, c2, c3 = st.columns([1,2,1])
     with c2:
@@ -213,6 +225,12 @@ if not st.session_state.full_access:
                 Teile CREATOR.FANS auf Social Media und erhalte sofortigen Vollzugriff.<br>
                 Kostenlos. Für immer.
             </p>
+            <div style='background: #f0f9ff; padding: 15px; border-radius: 8px; margin: 20px auto; max-width: 600px;'>
+                <p style='margin: 0; font-size: 14px; color: #0369a1;'>
+                    🔒 <strong>Privacy First:</strong> Deine Daten bleiben verschlüsselt in deiner Supabase-Instanz. 
+                    Zero-Knowledge Architecture.
+                </p>
+            </div>
         </div>
     """, unsafe_allow_html=True)
     
