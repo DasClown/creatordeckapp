@@ -173,15 +173,11 @@ st.markdown("""
 
 # --- LANDING PAGE ---
 def render_landing_page():
-    st.markdown("""
-        <div style='padding: 80px 20px; text-align: center;'>
-            <h1 style='font-size: 64px; font-weight: 300; letter-spacing: -2px;'>CREATOR.FANS</h1>
-            <p style='font-size: 18px; color: #666; font-weight: 300; max-width: 600px; margin: 0 auto 40px auto;'>
-                Advanced Analytics. Zero Cost. High Impact. <br>
-                🚀 Alpha Access: Free Forever für Early Adopters
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
+    # Zentrales Logo (Punkt mit Kreisen / Minimalist)
+    st.markdown("<div style='text-align: center; padding: 50px; font-size: 40px; color: #000;'>●</div>", unsafe_allow_html=True)
+    
+    st.markdown("<h1 style='text-align: center;'>CONTENT CORE</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #666; letter-spacing: 2px; font-size: 14px; margin-bottom: 50px;'>SYSTEM INITIALIZATION</p>", unsafe_allow_html=True)
 
     col1, col2 = st.columns([1, 1])
 
