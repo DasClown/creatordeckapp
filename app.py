@@ -10,15 +10,27 @@ from supabase import create_client
 
 # --- HELPER FUNCTIONS ---
 def init_supabase():
-    """Initialize Supabase client"""
+    """Initialize Supabase client with validation"""
     try:
         url = st.secrets.get("SUPABASE_URL")
         key = st.secrets.get("SUPABASE_KEY")
-        if url and key:
-            return create_client(url, key)
-    except:
-        pass
-    return None
+        
+        if not url or not key:
+            return None
+            
+        # URL Validation
+        if not url.startswith("https://"):
+            st.error("🚫 SUPABASE_URL muss mit 'https://' beginnen.")
+            return None
+        
+        if ".supabase.co" not in url:
+            st.error("🚫 SUPABASE_URL scheint kein gültiger Supabase-Endpunkt zu sein.")
+            return None
+
+        return create_client(url, key)
+    except Exception as e:
+        st.error(f"🔧 Interner Fehler bei Supabase-Initialisierung: {e}")
+        return None
 
 # --- SETUP ---
 st.set_page_config(
@@ -167,8 +179,12 @@ def render_landing_page():
                             supabase.table("waitlist").insert({"email": email}).execute()
                             st.success("✅ Auf die Warteliste gesetzt.")
                     except Exception as e:
-                        st.error(f"Fehler beim Speichern: {str(e)}")
-                        st.info("💡 Tipp: Prüfe ob RLS für die 'waitlist' Tabelle deaktiviert ist oder eine 'Enable Insert' Policy existiert.")
+                        if "Name or service not known" in str(e):
+                            st.error("📡 Verbindungsfehler: Die Supabase URL konnte nicht gefunden werden.")
+                            st.info("💡 Bitte prüfe in den **Streamlit Cloud Secrets**, ob die `SUPABASE_URL` korrekt geschrieben ist (ohne Leerzeichen, mit https://).")
+                        else:
+                            st.error(f"Fehler beim Speichern: {str(e)}")
+                            st.info("💡 Tipp: Prüfe ob RLS für die 'waitlist' Tabelle deaktiviert ist oder eine 'Enable Insert' Policy existiert.")
                 else:
                     st.warning("Waitlist aktuell nicht verfügbar.")
             else:
