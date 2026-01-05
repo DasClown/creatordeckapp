@@ -83,77 +83,65 @@ st.markdown("""
     </head>
 """, unsafe_allow_html=True)
 
-# --- CSS STYLING (RADICAL MINIMALISM) ---
+# --- CSS STYLING (CONTENT CORE THEME) ---
 st.markdown("""
 <style>
-    /* Google Font: Inter */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+    /* Google Font: Inter Bold */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;800&display=swap');
 
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-        background-color: #FFFFFF !important;
+    /* Hintergrund und Grundschrift */
+    .stApp { 
+        background-color: #FFFFFF; 
+        color: #000000; 
+    }
+    
+    /* Typografie: CONTENT CORE BOLD */
+    h1, h2, h3, h4 { 
+        font-family: 'Inter', sans-serif; 
+        font-weight: 800 !important; 
+        letter-spacing: -1.5px !important; 
         color: #000000 !important;
+        text-transform: uppercase;
     }
-
-    /* Radikaler Minimalismus: Keine Schatten, nur 1px Linien */
-    [data-testid="stSidebar"] {
-        background-color: #FFFFFF !important;
-        border-right: 1px solid #E0E0E0 !important;
-    }
-
-    /* Card-Ersatz: Flache Boxen */
-    .stMetric, .ai-box, .custom-card {
-        background-color: #FFFFFF !important;
-        border: 1px solid #E0E0E0 !important;
-        border-radius: 0px !important; /* Harte Kanten für edlen Look */
-        padding: 20px !important;
-        box-shadow: none !important;
-    }
-
-    /* Buttons: Black & White */
-    .stButton > button {
+    
+    /* Buttons: CONTENT CORE SHARP */
+    .stButton>button {
         background-color: #000000 !important;
         color: #FFFFFF !important;
-        border-radius: 0px !important;
         border: 1px solid #000000 !important;
-        font-weight: 600 !important;
+        border-radius: 0px !important;
+        font-weight: 500 !important;
+        padding: 0.5rem 2rem !important;
+        transition: 0.2s !important;
         text-transform: uppercase;
         letter-spacing: 1px;
-        transition: all 0.3s ease;
     }
-    .stButton > button:hover {
+    .stButton>button:hover {
         background-color: #FFFFFF !important;
         color: #000000 !important;
     }
 
-    /* Inputs */
-    .stTextInput > div > div > input, .stTextArea > div > div > textarea {
-        border-radius: 0px !important;
-        border: 1px solid #E0E0E0 !important;
+    /* Input Felder: SHARP & MINIMAL */
+    .stTextInput>div>div>input {
         background-color: #FFFFFF !important;
+        border: 1px solid #EEEEEE !important;
+        border-radius: 0px !important;
+        color: #000000 !important;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Sidebar Fixes */
+    [data-testid="stSidebar"] {
+        background-color: #FFFFFF !important;
+        border-right: 1px solid #EEEEEE !important;
     }
 
     /* Metriken */
     [data-testid="stMetricValue"] {
-        font-weight: 300 !important;
-        letter-spacing: -1px;
-        font-size: 2.5rem !important;
+        font-weight: 800 !important;
+        letter-spacing: -2px;
+        font-size: 3rem !important;
         color: #000000 !important;
-    }
-    
-    /* Akzentuierte Metriken */
-    [data-testid="stMetricDelta"] > div {
-        font-weight: 500 !important;
-    }
-
-    /* Erfolg/Einnahmen (Grün) */
-    div[data-testid="stMetricDelta"] > div[data-testid="stMetricDeltaDirection-Up"] {
-        color: #28a745 !important;
-    }
-
-    /* Verlust/Ausgaben (Rot) */
-    div[data-testid="stMetricDelta"] > div[data-testid="stMetricDeltaDirection-Down"] {
-        color: #dc3545 !important;
     }
     
     /* Tabs */
@@ -162,13 +150,14 @@ st.markdown("""
         background-color: transparent;
     }
     .stTabs [data-baseweb="tab"] {
-        height: 50px;
         background-color: transparent;
         border: none;
         color: #888888;
+        font-weight: 300;
     }
     .stTabs [aria-selected="true"] {
         color: #000000 !important;
+        font-weight: 800 !important;
         border-bottom: 2px solid #000000 !important;
     }
 </style>
