@@ -9,6 +9,9 @@ import google.generativeai as genai
 from supabase import create_client
 import resend
 
+# API Key direkt aus den Secrets laden
+resend.api_key = st.secrets.get("RESEND_API_KEY", "re_P9igZ7ze_L3JmWkdRe3KEJWW9FBpTP6aT")
+
 # --- HELPER FUNCTIONS ---
 def init_supabase():
     """Initialize Supabase client with validation"""
@@ -36,20 +39,31 @@ def init_supabase():
         return None
 
 def send_verification_email(email):
-    """Send verification email via Resend"""
+    # WICHTIG: Im Sandbox-Modus darf NUR an deine eigene E-Mail gesendet werden.
+    # WICHTIG: Absender MUSS onboarding@resend.dev sein.
+    
+    verify_url = f"https://www.content-core.io/?verify={email}" # Deine neue Domain
+    
     try:
-        resend.api_key = st.secrets.get("RESEND_API_KEY", "re_P9igZ7ze_L3JmWkdRe3KEJWW9FBpTP6aT")
-        response = resend.Emails.send({
-            "from": "onboarding@resend.dev", # Pflicht im Sandbox-Modus!
-            "to": email,
-            "subject": "Bestätige deinen CONTENT CORE Zugang",
-            "html": f"<a href='https://www.content-core.io/?verify={email}'>VERIFIZIEREN</a>"
-        })
-        print(f"Resend Response: {response}") # Erscheint in den Streamlit Logs
-        return True
+        params = {
+            "from": "CONTENT-CORE <onboarding@resend.dev>",
+            "to": [email],
+            "subject": "Systemzugriff: CONTENT CORE verifizieren",
+            "html": f"""
+                <div style='font-family: monospace; border: 1px solid #000; padding: 20px; max-width: 400px;'>
+                    <h2 style='font-weight: 300; letter-spacing: -1px;'>CONTENT CORE</h2>
+                    <p style='font-size: 14px;'>Initialisierung des Terminals für: <b>{email}</b></p>
+                    <hr style='border: 0; border-top: 1px solid #eee; margin: 20px 0;'>
+                    <a href='{verify_url}' style='background: #000; color: #fff; padding: 10px 15px; text-decoration: none; display: inline-block; font-size: 12px;'>VERIFY ACCESS</a>
+                </div>
+            """
+        }
+        
+        r = resend.Emails.send(params)
+        return r
     except Exception as e:
-        st.error(f"Kritischer E-Mail Fehler: {e}")
-        return False
+        st.error(f"Resend Error: {str(e)}")
+        return None
 
 # --- SETUP ---
 st.set_page_config(
