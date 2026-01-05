@@ -195,9 +195,9 @@ def render_landing_page():
     st.markdown("<p style='text-align: center; color: #666;'>SYSTEM INITIALIZATION</p>", unsafe_allow_html=True)
     st.markdown("<div style='margin-bottom: 50px;'></div>", unsafe_allow_html=True)
 
-    col1, col2 = st.columns([1, 1])
+    left_spacer, center_col, right_spacer = st.columns([1, 2, 1])
 
-    with col1:
+    with center_col:
         st.markdown("### JOIN THE WAITLIST")
         email = st.text_input("Deine E-Mail", placeholder="name@domain.com")
         if st.button("BEWERBEN"):
@@ -236,20 +236,6 @@ def render_landing_page():
                     st.warning("Waitlist aktuell nicht verfügbar.")
             else:
                 st.warning("Bitte E-Mail eingeben.")
-    
-    with col2:
-        st.markdown("### CONNECT & NETWORK")
-        st.write("Für Partnerschaften oder direkten Zugang kontaktiere mich über:")
-        
-        # Stilvolle Black-Buttons für Socials
-        st.markdown("""
-            <a href='https://reddit.com/u/YourUser' target='_blank' style='text-decoration:none;'>
-                <div style='padding:10px; border:1px solid #000; color:#000; text-align:center; margin-bottom:10px; transition: all 0.3s;'>REDDIT</div>
-            </a>
-            <a href='https://instagram.com/YourUser' target='_blank' style='text-decoration:none;'>
-                <div style='padding:10px; border:1px solid #000; color:#000; text-align:center;'>INSTAGRAM</div>
-            </a>
-        """, unsafe_allow_html=True)
 
     st.divider()
     
