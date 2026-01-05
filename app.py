@@ -11,6 +11,11 @@ from supabase import create_client
 # --- SETUP ---
 st.set_page_config(page_title="CreatorOS", layout="wide", page_icon="⚫")
 
+# --- ANALYTICS ---
+st.markdown("""
+    <script src="https://cdn.usefathom.com/script.js" data-site="YOUR_ID" defer></script>
+""", unsafe_allow_html=True)
+
 # --- CSS STYLING (RADICAL MINIMALISM) ---
 st.markdown("""
 <style>
