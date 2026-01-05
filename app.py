@@ -8,6 +8,18 @@ import pandas as pd
 import google.generativeai as genai
 from supabase import create_client
 
+# --- HELPER FUNCTIONS ---
+def init_supabase():
+    """Initialize Supabase client"""
+    try:
+        url = st.secrets.get("SUPABASE_URL")
+        key = st.secrets.get("SUPABASE_KEY")
+        if url and key:
+            return create_client(url, key)
+    except:
+        pass
+    return None
+
 # --- SETUP ---
 st.set_page_config(
     page_title="CREATOR.FANS",
@@ -123,19 +135,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-# --- HELPER FUNCTIONS ---
-def init_supabase():
-    """Initialize Supabase client"""
-    try:
-        url = st.secrets.get("SUPABASE_URL")
-        key = st.secrets.get("SUPABASE_KEY")
-        if url and key:
-            from supabase import create_client
-            return create_client(url, key)
-    except:
-        pass
-    return None
 
 # --- LANDING PAGE ---
 def render_landing_page():
