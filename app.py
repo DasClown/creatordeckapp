@@ -186,11 +186,11 @@ def render_landing_page():
     
     # Trust & Privacy Badge
     st.markdown("""
-        <div style='background: #ffffff; padding: 20px; border: 1px solid #e0e0e0; margin: 20px 0;'>
-            <h4 style='margin: 0 0 10px 0; font-weight: 300; font-size: 16px; color: #000000;'>🔒 Data Privacy</h4>
-            <p style='margin: 0; color: #666; font-size: 14px; line-height: 1.6; font-weight: 300;'>
+        <div style='background: #ffffff; padding: 0px; margin: 40px 0; text-align: center;'>
+            <h4 style='margin: 0 0 10px 0; font-weight: 300; font-size: 20px; color: #000000;'>🔒 Data Privacy</h4>
+            <p style='margin: 0; color: #000000; font-size: 16px; line-height: 1.6; font-weight: 300; max-width: 700px; margin: 0 auto;'>
                 Deine Daten werden verschlüsselt in einer dedizierten Supabase-Instanz gespeichert. 
-                Wir haben <strong style='font-weight: 500;'>keinen Zugriff</strong> auf deine Passwörter; die Verbindung erfolgt über 
+                Wir haben <span style='font-weight: 600;'>keinen Zugriff</span> auf deine Passwörter; die Verbindung erfolgt über 
                 öffentliche Schnittstellen oder manuellen Import.
             </p>
         </div>
@@ -237,9 +237,9 @@ if not st.session_state.full_access:
                 Teile CREATOR.FANS auf Social Media und erhalte sofortigen Vollzugriff.<br>
                 Kostenlos. Für immer.
             </p>
-            <div style='background: #ffffff; padding: 15px; border: 1px solid #e0e0e0; margin: 20px auto; max-width: 600px;'>
-                <p style='margin: 0; font-size: 14px; color: #666; font-weight: 300;'>
-                    🔒 <strong style='font-weight: 500;'>Privacy First:</strong> Deine Daten bleiben verschlüsselt in deiner Supabase-Instanz. 
+            <div style='background: #ffffff; padding: 0px; margin: 40px auto; max-width: 600px; text-align: center;'>
+                <p style='margin: 0; font-size: 16px; color: #000000; font-weight: 300;'>
+                    🔒 <span style='font-weight: 600;'>Privacy First:</span> Deine Daten bleiben verschlüsselt in deiner Supabase-Instanz. 
                     Zero-Knowledge Architecture.
                 </p>
             </div>
