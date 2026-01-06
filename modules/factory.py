@@ -49,8 +49,24 @@ def render_factory(supabase):
                         response = client.models.generate_content(model='gemini-2.0-flash-exp', contents=prompt)
                         st.session_state.factory_output = response.text
                 except Exception as e:
-                    st.error(f"AI Generation fehlgeschlagen: {str(e)}")
-                    st.info("Tipp: Prüfe ob GEMINI_API_KEY korrekt in den Streamlit Secrets konfiguriert ist.")
+                    error_msg = str(e)
+                    
+                    # Spezielle Behandlung für Quota-Fehler
+                    if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                        st.error("🚫 **GEMINI API QUOTA ERREICHT**")
+                        st.warning("""
+                        Das kostenlose Gemini API Limit wurde erreicht. Lösungen:
+                        
+                        1. **Warten:** Retry in ~20 Sekunden möglich
+                        2. **Upgrade:** Auf Gemini API Paid Tier upgraden
+                        3. **Neuer Key:** Anderen API-Key verwenden
+                        4. **Alternative:** FACTORY-Feature vorübergehend deaktivieren
+                        
+                        [Mehr Info zu Rate Limits](https://ai.google.dev/gemini-api/docs/rate-limits)
+                        """)
+                    else:
+                        st.error(f"AI Generation fehlgeschlagen: {error_msg}")
+                        st.info("Tipp: Prüfe ob GEMINI_API_KEY korrekt in den Streamlit Secrets konfiguriert ist.")
             else:
                 st.warning("Eingabe erforderlich.")
 
