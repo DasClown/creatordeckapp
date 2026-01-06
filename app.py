@@ -102,8 +102,12 @@ def run_instagram_sync(profile_url, supabase):
 def render_instagram_sync(supabase):
     """UI Komponente für den Instagram Core Sync (In Sidebar oder Landing)"""
     st.markdown("### SYSTEM CONTROL")
-    # Einzigartiger Key: 'engine_sync_input'
-    user_url = st.text_input("TARGET INSTAGRAM URL", placeholder="https://instagram.com/...", key="engine_sync_input")
+    
+    # KEY-FIX: Dynamischer Key basierend auf User Email verhindert Duplicate Key Error
+    user_email = st.session_state.get('user_email', 'guest')
+    unique_key = f"sync_input_{user_email.replace('@', '_').replace('.', '_')}"
+    
+    user_url = st.text_input("TARGET INSTAGRAM URL", placeholder="https://instagram.com/...", key=unique_key)
 
     if st.button("INITIALIZE SYNC", key="engine_sync_button"):
         if user_url:
@@ -199,6 +203,11 @@ def render_styles():
         [data-testid="stSidebar"] {
             background-color: #F8F8F8 !important;
             border-right: 1px solid #000000 !important;
+        }
+
+        /* Sidebar Text Visibility Fix: Wildcard für alle Elemente */
+        [data-testid="stSidebar"] * {
+            color: #000000 !important;
         }
 
         [data-testid="stSidebar"] h1 {
