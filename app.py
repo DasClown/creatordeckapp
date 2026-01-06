@@ -249,6 +249,79 @@ def render_styles():
             background-color: #FFFFFF !important;
             color: #000000 !important;
         }
+        
+        /* Info Boxes - Blauer Hintergrund mit schwarzem Text */
+        div[data-testid="stInfo"] {
+            background-color: #E3F2FD !important;
+            color: #000000 !important;
+            border: 1px solid #2196F3 !important;
+            border-radius: 0px !important;
+        }
+        div[data-testid="stInfo"] * {
+            color: #000000 !important;
+        }
+        
+        /* Warning Boxes - Gelber Hintergrund mit schwarzem Text */
+        div[data-testid="stWarning"] {
+            background-color: #FFF9C4 !important;
+            color: #000000 !important;
+            border: 1px solid #FFC107 !important;
+            border-radius: 0px !important;
+        }
+        div[data-testid="stWarning"] * {
+            color: #000000 !important;
+        }
+        
+        /* Success Boxes - Grüner Hintergrund mit schwarzem Text */
+        div[data-testid="stSuccess"] {
+            background-color: #E8F5E9 !important;
+            color: #000000 !important;
+            border: 1px solid #4CAF50 !important;
+            border-radius: 0px !important;
+        }
+        div[data-testid="stSuccess"] * {
+            color: #000000 !important;
+        }
+        
+        /* Error Boxes - Roter Hintergrund mit schwarzem Text */
+        div[data-testid="stError"] {
+            background-color: #FFEBEE !important;
+            color: #000000 !important;
+            border: 1px solid #F44336 !important;
+            border-radius: 0px !important;
+        }
+        div[data-testid="stError"] * {
+            color: #000000 !important;
+        }
+        
+        /* Expander - Schwarzer Text */
+        div[data-testid="stExpander"] {
+            background-color: #FFFFFF !important;
+            border: 1px solid #EEEEEE !important;
+            border-radius: 0px !important;
+        }
+        div[data-testid="stExpander"] * {
+            color: #000000 !important;
+        }
+        
+        /* Markdown Text - Schwarzer Text */
+        .stMarkdown {
+            color: #000000 !important;
+        }
+        .stMarkdown * {
+            color: #000000 !important;
+        }
+        
+        /* Text Area - Schwarzer Text */
+        textarea {
+            color: #000000 !important;
+            background-color: #FFFFFF !important;
+        }
+        
+        /* Select Slider - Schwarzer Text */
+        div[data-baseweb="slider"] * {
+            color: #000000 !important;
+        }
     </style>
     """, unsafe_allow_html=True)
 
