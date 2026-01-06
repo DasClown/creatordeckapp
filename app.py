@@ -29,8 +29,9 @@ except Exception as e:
     st.stop()
 
 # --- 3. HELPER FUNCTIONS ---
+@st.cache_resource
 def init_supabase():
-    """Initialisierte Supabase-Instanz zurückgeben"""
+    """Initialisierte Supabase-Instanz zurückgeben (gecacht für Performance)"""
     return supabase
 
 def send_verification_email(email):
