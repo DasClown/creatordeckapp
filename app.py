@@ -100,17 +100,19 @@ def run_instagram_sync(profile_url, supabase):
         st.error(f"CORE CONNECTION LOST: {e}")
     return False
 
-def render_instagram_sync(supabase):
+def render_instagram_sync(supabase, context="default"):
     """UI Komponente für den Instagram Core Sync (In Sidebar oder Landing)"""
     st.markdown("### SYSTEM CONTROL")
     
-    # KEY-FIX: Dynamischer Key basierend auf User Email verhindert Duplicate Key Error
+    # KEY-FIX: Dynamischer Key mit Context verhindert Duplicate Key Error
     user_email = st.session_state.get('user_email', 'guest')
-    unique_key = f"sync_input_{user_email.replace('@', '_').replace('.', '_')}"
+    safe_email = user_email.replace('@', '_').replace('.', '_')
+    unique_key = f"{context}_sync_input_{safe_email}"
+    button_key = f"{context}_sync_button"
     
     user_url = st.text_input("TARGET INSTAGRAM URL", placeholder="https://instagram.com/...", key=unique_key)
 
-    if st.button("INITIALIZE SYNC", key="engine_sync_button"):
+    if st.button("INITIALIZE SYNC", key=button_key):
         if user_url:
             if run_instagram_sync(user_url, supabase):
                 st.rerun()
@@ -439,7 +441,7 @@ def render_dashboard_layout():
         
         st.markdown("---")
         # Sync in Sidebar integriert
-        render_instagram_sync(supabase)
+        render_instagram_sync(supabase, context="sidebar")
         
         st.markdown("---")
         if st.button("LOGOUT"):
@@ -477,7 +479,7 @@ def render_dashboard(supabase):
             st.info("Willkommen im Terminal. Lade deine ersten Daten.")
             col1, col2 = st.columns(2)
             with col1:
-                render_instagram_sync(supabase)
+                render_instagram_sync(supabase, context="onboarding")
             with col2:
                 st.markdown("#### Option B: Manual Data Entry")
                 with st.expander("Eckdaten eingeben"):
