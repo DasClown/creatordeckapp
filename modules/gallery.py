@@ -33,74 +33,109 @@ def render_gallery(supabase):
         logo_file = st.file_uploader("Logo (optional)", type=["png"], key="logo_upload")
         
         if uploaded_file:
-            img = Image.open(uploaded_file).convert("RGBA")
+            # Bild laden und zu RGB konvertieren
+            img = Image.open(uploaded_file)
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
             
-            # Vorschau mit Watermark
+            # Vorschau mit Watermark erstellen
             preview_img = img.copy()
             
             # Text-Watermark hinzufügen
             if wm_text:
-                # Transparente Overlay-Ebene
-                txt_layer = Image.new('RGBA', preview_img.size, (255, 255, 255, 0))
-                draw = ImageDraw.Draw(txt_layer)
+                # Direkt auf das Bild zeichnen (einfacher Ansatz)
+                draw = ImageDraw.Draw(preview_img)
                 
-                # Font (fallback auf default)
-                try:
-                    font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", font_size)
-                except:
+                # Font laden - mit robustem Fallback
+                font = None
+                font_paths = [
+                    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+                    "/System/Library/Fonts/Helvetica.ttc",
+                    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+                ]
+                
+                for font_path in font_paths:
+                    try:
+                        font = ImageFont.truetype(font_path, font_size)
+                        break
+                    except:
+                        continue
+                
+                # Fallback auf default font
+                if font is None:
                     font = ImageFont.load_default()
                 
                 # Position berechnen
                 w, h = preview_img.size
-                bbox = draw.textbbox((0, 0), wm_text, font=font)
-                text_w = bbox[2] - bbox[0]
-                text_h = bbox[3] - bbox[1]
                 
+                # Text-Größe ermitteln
+                try:
+                    bbox = draw.textbbox((0, 0), wm_text, font=font)
+                    text_w = bbox[2] - bbox[0]
+                    text_h = bbox[3] - bbox[1]
+                except:
+                    # Fallback für ältere PIL-Versionen
+                    text_w, text_h = draw.textsize(wm_text, font=font)
+                
+                # Position berechnen
+                padding = 20
                 if position == "Unten Rechts":
-                    x, y = w - text_w - 20, h - text_h - 20
+                    x, y = w - text_w - padding, h - text_h - padding
                 elif position == "Unten Links":
-                    x, y = 20, h - text_h - 20
+                    x, y = padding, h - text_h - padding
                 elif position == "Oben Rechts":
-                    x, y = w - text_w - 20, 20
+                    x, y = w - text_w - padding, padding
                 elif position == "Oben Links":
-                    x, y = 20, 20
+                    x, y = padding, padding
                 else:  # Mitte
                     x, y = (w - text_w) // 2, (h - text_h) // 2
                 
-                # Text mit Deckkraft
-                alpha = int(255 * (opacity / 100))
-                draw.text((x, y), wm_text, fill=(255, 255, 255, alpha), font=font)
+                # Schatten für bessere Lesbarkeit
+                shadow_offset = 2
+                draw.text((x + shadow_offset, y + shadow_offset), wm_text, fill=(0, 0, 0), font=font)
                 
-                # Overlay kombinieren
-                preview_img = Image.alpha_composite(preview_img, txt_layer)
+                # Haupttext in Weiß
+                draw.text((x, y), wm_text, fill=(255, 255, 255), font=font)
             
             # Logo hinzufügen (falls vorhanden)
             if logo_file:
-                logo = Image.open(logo_file).convert("RGBA")
-                # Logo skalieren (max 20% der Bildbreite)
-                logo_w = int(w * 0.2)
-                logo_h = int(logo.height * (logo_w / logo.width))
-                logo = logo.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
-                
-                # Logo-Position (immer oben links)
-                logo_x, logo_y = 20, 20
-                
-                # Logo mit Deckkraft
-                if opacity < 100:
-                    logo_alpha = logo.split()[3]
-                    logo_alpha = logo_alpha.point(lambda p: int(p * (opacity / 100)))
-                    logo.putalpha(logo_alpha)
-                
-                preview_img.paste(logo, (logo_x, logo_y), logo)
+                try:
+                    logo = Image.open(logo_file).convert("RGBA")
+                    w, h = preview_img.size
+                    
+                    # Logo skalieren (max 20% der Bildbreite)
+                    logo_w = int(w * 0.2)
+                    logo_h = int(logo.height * (logo_w / logo.width))
+                    logo = logo.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
+                    
+                    # Logo-Position (oben links mit Padding)
+                    logo_x, logo_y = 20, 20
+                    
+                    # Logo einfügen
+                    preview_img.paste(logo, (logo_x, logo_y), logo)
+                except Exception as e:
+                    st.warning(f"Logo konnte nicht hinzugefügt werden: {str(e)}")
             
             # Vorschau anzeigen
             st.image(preview_img, caption="Vorschau", use_container_width=True)
             
-            if st.button("PROCESS & UPLOAD"):
-                # Finales Bild speichern (mit Watermark)
-                final_img = preview_img.convert("RGB")  # Konvertiere zu RGB für JPEG
+            # Download-Button für Vorschau
+            buf_preview = io.BytesIO()
+            preview_img.save(buf_preview, format="PNG")
+            buf_preview.seek(0)
+            
+            st.download_button(
+                label="📥 DOWNLOAD PREVIEW",
+                data=buf_preview,
+                file_name=f"preview_{uploaded_file.name}",
+                mime="image/png"
+            )
+            
+            if st.button("☁️ UPLOAD TO CLOUD"):
+                # Finales Bild speichern
                 buf = io.BytesIO()
-                final_img.save(buf, format="PNG")
+                preview_img.save(buf, format="PNG")
                 buf.seek(0)
                 
                 try:
@@ -108,7 +143,12 @@ def render_gallery(supabase):
                     
                     # Upload zu Supabase Storage
                     supabase.storage.from_("assets").upload(file_path, buf.getvalue())
-                    st.success(f"Stored as: {file_path}")
+                    st.success(f"✅ Uploaded: {file_path}")
+                    
+                    # Public URL anzeigen
+                    url = supabase.storage.from_("assets").get_public_url(file_path)
+                    st.info(f"🔗 Public URL: {url}")
+                    
                 except Exception as e:
                     error_msg = str(e)
                     
@@ -123,17 +163,14 @@ def render_gallery(supabase):
                         3. Storage → "New Bucket"
                         4. Name: `assets`
                         5. Public: ✅ (für Bild-URLs)
-                        
-                        **Alternative:** GALLERY-Feature vorübergehend nicht nutzen
                         """)
                     elif "Policy" in error_msg or "permission" in error_msg.lower():
                         st.error("🔒 **STORAGE PERMISSIONS FEHLEN**")
                         st.warning("""
                         Keine Upload-Berechtigung. Prüfe Storage Policies:
                         
-                        1. Supabase Dashboard → Storage → assets
-                        2. Policies → "New Policy"
-                        3. Erlaube INSERT für authenticated users
+                        1. Supabase Dashboard → SQL Editor
+                        2. Führe aus: `CREATE POLICY "Allow anonymous uploads" ON storage.objects FOR INSERT TO anon WITH CHECK (bucket_id = 'assets');`
                         """)
                     else:
                         st.error(f"Upload fehlgeschlagen: {error_msg}")
@@ -149,7 +186,10 @@ def render_gallery(supabase):
                     url = supabase.storage.from_("assets").get_public_url(f"branded/{f['name']}")
                     st.image(url, width=200)
                     st.caption(f['name'])
+                    
+                    # Download-Button für Cloud-Assets
+                    st.markdown(f"[📥 Download]({url})")
             else:
                 st.info("Noch keine Uploads vorhanden.")
-        except:
+        except Exception as e:
             st.info("Keine Assets gefunden.")
