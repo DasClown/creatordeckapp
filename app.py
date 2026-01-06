@@ -385,7 +385,7 @@ def render_landing_page():
         <div style='background: #ffffff; padding: 0px; margin: 40px 0; text-align: center;'>
             <h4 style='margin: 0 0 10px 0; font-weight: 300; font-size: 20px; color: #000000;'>Data Privacy</h4>
             <p style='margin: 0; color: #000000; font-size: 16px; line-height: 1.6; font-weight: 300; max-width: 700px; margin: 0 auto;'>
-                Deine Daten werden verschlüsselt in einer dedizierten Supabase-Instanz gespeichert. 
+                Deine Daten werden verschlüsselt gespeichert. 
                 Wir haben <span style='font-weight: 600;'>keinen Zugriff</span> auf deine Passwörter; die Verbindung erfolgt über 
                 öffentliche Schnittstellen oder manuellen Import.
             </p>
