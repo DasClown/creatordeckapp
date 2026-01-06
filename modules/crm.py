@@ -5,13 +5,55 @@ from supabase import create_client
 def render_crm(supabase):
     st.title("CRM")
     
-    # Daten aus Supabase laden
-    response = supabase.table("deals").select("*").execute()
-    df_deals = pd.DataFrame(response.data)
-
-    if df_deals.empty:
-        st.info("Keine Deals gefunden. Starte eine neue Verhandlung!")
-        df_deals = pd.DataFrame(columns=["brand", "status", "value", "deadline"])
+    # Deals aus DB laden
+    try:
+        res = supabase.table("deals").select("*").execute()
+        
+        if not res.data:
+            st.info("Keine Deals gefunden. Starte eine neue Verhandlung!")
+            # Create an empty DataFrame with the expected columns for the editor
+            df_deals = pd.DataFrame(columns=["brand", "stage", "value", "date"])
+        else:
+            df_deals = pd.DataFrame(res.data)
+        
+        # Prüfe ob erforderliche Spalten existieren
+        required_columns = ["brand", "stage", "value", "date"]
+        missing_columns = [col for col in required_columns if col not in df_deals.columns]
+        
+        if missing_columns:
+            st.error(f"🗂️ **DATENBANK-SCHEMA FEHLER**")
+            st.warning(f"""
+            Die 'deals' Tabelle fehlt folgende Spalten: {', '.join(missing_columns)}
+            
+            **Erforderliche Spalten:**
+            - brand (text)
+            - stage (text)
+            - value (text oder numeric)
+            - date (date oder text)
+            
+            **Lösung:**
+            1. Gehe zu Supabase Dashboard
+            2. SQL Editor → Neue Query
+            3. Erstelle Tabelle mit korrektem Schema:
+            
+            ```sql
+            CREATE TABLE IF NOT EXISTS deals (
+                id SERIAL PRIMARY KEY,
+                brand TEXT,
+                stage TEXT,
+                value TEXT,
+                date TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+            ```
+            
+            **Alternative:** CRM-Feature vorübergehend nicht nutzen
+            """)
+            return
+    except Exception as e:
+        st.error(f"CRM Datenbankfehler: {str(e)}")
+        st.info("Tipp: Prüfe ob 'deals' Tabelle in Supabase existiert")
+        return
 
     # UI
     st.subheader("Active Pipeline")
