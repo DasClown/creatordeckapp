@@ -8,45 +8,6 @@ import uuid
 def render_planner(supabase):
     st.title("CONTENT PLANNER")
     
-    # Prüfe ob Tabelle existiert und welche Spalten vorhanden sind
-    try:
-        test_query = supabase.table("content_plan").select("*").limit(1).execute()
-        table_exists = True
-        
-        # Erkenne vorhandene Spalten
-        if test_query.data:
-            available_columns = list(test_query.data[0].keys())
-        else:
-            # Tabelle leer, versuche Insert mit Minimal-Schema
-            available_columns = ["publish_date", "platform", "content_type"]
-    except:
-        table_exists = False
-        available_columns = []
-    
-    if not table_exists:
-        st.error("📋 **CONTENT_PLAN TABELLE FEHLT**")
-        st.info("""
-        Erstelle die Tabelle in Supabase mit dieser SQL-Query:
-        
-        ```sql
-        CREATE TABLE IF NOT EXISTS content_plan (
-            id SERIAL PRIMARY KEY,
-            publish_date TEXT,
-            platform TEXT DEFAULT 'Instagram',
-            content_type TEXT DEFAULT 'Post',
-            title TEXT,
-            caption TEXT,
-            asset_url TEXT,
-            created_at TIMESTAMP DEFAULT NOW()
-        );
-        
-        ALTER TABLE content_plan DISABLE ROW LEVEL SECURITY;
-        ```
-        
-        **Oder nutze andere Module** - PLANNER ist optional!
-        """)
-        return
-    
     # Zwei-Spalten Layout
     col1, col2 = st.columns([1, 2])
     
@@ -54,7 +15,7 @@ def render_planner(supabase):
         st.subheader("📝 Neuen Post planen")
         
         with st.form("new_post_form", clear_on_submit=True):
-            # Basis-Felder (immer vorhanden)
+            # Basis-Felder
             publish_date = st.date_input("Veröffentlichungsdatum", datetime.now())
             platform = st.selectbox("Platform", ["Instagram", "TikTok", "YouTube", "LinkedIn"])
             content_type = st.selectbox("Content-Typ", ["Reel", "Post", "Story", "Video", "Carousel"])
@@ -88,42 +49,80 @@ def render_planner(supabase):
                     except Exception as e:
                         st.warning(f"Bild-Upload fehlgeschlagen: {str(e)}")
                 
-                # Post speichern - nur Felder die existieren
+                # Post speichern - versuche verschiedene Schema-Varianten
+                saved = False
+                error_msg = None
+                
+                # Variante 1: Versuche mit c_type (existierendes Schema)
                 try:
-                    # Basis-Felder mit Schema-Mapping
                     post_data = {
                         "publish_date": str(publish_date),
-                        "platform": platform
+                        "platform": platform,
+                        "c_type": content_type
                     }
-                    
-                    # content_type kann c_type oder content_type heißen
-                    if "c_type" in available_columns:
-                        post_data["c_type"] = content_type
-                    elif "content_type" in available_columns:
-                        post_data["content_type"] = content_type
-                    
-                    # Füge optionale Felder nur hinzu wenn Spalten existieren
-                    if title and "title" in available_columns:
+                    if title:
                         post_data["title"] = title
-                    if caption and "caption" in available_columns:
+                    if caption:
                         post_data["caption"] = caption
-                    if asset_url and "asset_url" in available_columns:
+                    if asset_url:
                         post_data["asset_url"] = asset_url
                     
                     supabase.table("content_plan").insert(post_data).execute()
+                    saved = True
                     st.success("✅ Post geplant!")
                     st.rerun()
-                    
                 except Exception as e:
-                    st.error(f"Fehler: {str(e)}")
+                    error_msg = str(e)
+                
+                # Variante 2: Falls c_type fehlschlägt, versuche content_type
+                if not saved:
+                    try:
+                        post_data = {
+                            "publish_date": str(publish_date),
+                            "platform": platform,
+                            "content_type": content_type
+                        }
+                        if title:
+                            post_data["title"] = title
+                        if caption:
+                            post_data["caption"] = caption
+                        if asset_url:
+                            post_data["asset_url"] = asset_url
+                        
+                        supabase.table("content_plan").insert(post_data).execute()
+                        saved = True
+                        st.success("✅ Post geplant!")
+                        st.rerun()
+                    except Exception as e2:
+                        error_msg = str(e2)
+                
+                # Wenn beide fehlschlagen, zeige Fehler
+                if not saved:
+                    st.error(f"Fehler beim Speichern: {error_msg}")
+                    st.info("""
+                    **Tabelle fehlt oder hat falsches Schema.**
+                    
+                    Erstelle sie mit:
+                    ```sql
+                    CREATE TABLE IF NOT EXISTS content_plan (
+                        id SERIAL PRIMARY KEY,
+                        publish_date TEXT,
+                        platform TEXT,
+                        c_type TEXT,
+                        title TEXT,
+                        caption TEXT,
+                        asset_url TEXT,
+                        created_at TIMESTAMP DEFAULT NOW()
+                    );
+                    ALTER TABLE content_plan DISABLE ROW LEVEL SECURITY;
+                    ```
+                    """)
     
     with col2:
         st.subheader("📅 Geplante Posts")
         
         # Filter
-        filter_col1, filter_col2 = st.columns(2)
-        with filter_col1:
-            filter_platform = st.selectbox("Filter Platform", ["Alle", "Instagram", "TikTok", "YouTube", "LinkedIn"], key="filter_platform")
+        filter_platform = st.selectbox("Filter Platform", ["Alle", "Instagram", "TikTok", "YouTube", "LinkedIn"], key="filter_platform")
         
         # Posts laden
         try:
@@ -134,8 +133,7 @@ def render_planner(supabase):
                 
                 # Spalten-Mapping für Anzeige
                 for post in posts:
-                    # Mappe c_type zu content_type für einheitliche Anzeige
-                    if 'c_type' in post and 'content_type' not in post:
+                    if 'c_type' in post:
                         post['content_type'] = post['c_type']
                 
                 # Filter
@@ -166,7 +164,7 @@ def render_planner(supabase):
                         with content_col2:
                             st.caption(f"**Platform:** {post.get('platform', 'N/A')} | **Typ:** {post.get('content_type', 'N/A')}")
                             
-                            # Caption anzeigen (gekürzt)
+                            # Caption
                             caption = post.get('caption', '')
                             if caption:
                                 if len(caption) > 150:
@@ -174,7 +172,7 @@ def render_planner(supabase):
                                 else:
                                     st.text(caption)
                             
-                            # Delete Button
+                            # Delete
                             if st.button("🗑️ Löschen", key=f"delete_{post['id']}"):
                                 supabase.table("content_plan").delete().eq("id", post['id']).execute()
                                 st.rerun()
@@ -183,3 +181,4 @@ def render_planner(supabase):
                 
         except Exception as e:
             st.error(f"Fehler beim Laden: {str(e)}")
+            st.info("Prüfe ob die 'content_plan' Tabelle in Supabase existiert.")
