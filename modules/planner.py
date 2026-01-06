@@ -61,8 +61,9 @@ def render_planner(supabase):
                 
                 # Post in Datenbank speichern
                 try:
+                    # Flexibles Schema: Unterstütze beide Spaltennamen
                     post_data = {
-                        "date": str(publish_date),
+                        "publish_date": str(publish_date),  # Existierendes Schema
                         "platform": platform,
                         "content_type": content_type,
                         "title": title,
@@ -98,6 +99,12 @@ def render_planner(supabase):
             
             if res.data:
                 posts = res.data
+                
+                # Spalten-Mapping: Unterstütze beide Schemas
+                for post in posts:
+                    # Wenn publish_date existiert aber date nicht, mappe es
+                    if 'publish_date' in post and 'date' not in post:
+                        post['date'] = post['publish_date']
                 
                 # Filter anwenden
                 if filter_platform != "Alle":
