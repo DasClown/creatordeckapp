@@ -24,11 +24,42 @@ def render_gallery(supabase):
                 # In Buffer speichern
                 buf = io.BytesIO()
                 img.save(buf, format="PNG")
-                file_path = f"branded/{uuid.uuid4()}.png"
                 
-                # Upload zu Supabase Storage
-                supabase.storage.from_("assets").upload(file_path, buf.getvalue())
-                st.success(f"Stored as: {file_path}")
+                try:
+                    file_path = f"branded/{uuid.uuid4()}.png"
+                    
+                    # Upload zu Supabase Storage
+                    supabase.storage.from_("assets").upload(file_path, buf.getvalue())
+                    st.success(f"Stored as: {file_path}")
+                except Exception as e:
+                    error_msg = str(e)
+                    
+                    # Spezielle Behandlung für Storage-Fehler
+                    if "Bucket not found" in error_msg or "404" in error_msg:
+                        st.error("🗂️ **SUPABASE STORAGE BUCKET FEHLT**")
+                        st.warning("""
+                        Der 'assets' Bucket existiert nicht in Supabase. So erstellst du ihn:
+                        
+                        1. Gehe zu [Supabase Dashboard](https://supabase.com/dashboard)
+                        2. Wähle dein Projekt
+                        3. Storage → "New Bucket"
+                        4. Name: `assets`
+                        5. Public: ✅ (für Bild-URLs)
+                        
+                        **Alternative:** GALLERY-Feature vorübergehend nicht nutzen
+                        """)
+                    elif "Policy" in error_msg or "permission" in error_msg.lower():
+                        st.error("🔒 **STORAGE PERMISSIONS FEHLEN**")
+                        st.warning("""
+                        Keine Upload-Berechtigung. Prüfe Storage Policies:
+                        
+                        1. Supabase Dashboard → Storage → assets
+                        2. Policies → "New Policy"
+                        3. Erlaube INSERT für authenticated users
+                        """)
+                    else:
+                        st.error(f"Upload fehlgeschlagen: {error_msg}")
+                        st.info("Tipp: Prüfe Supabase Storage Konfiguration")
 
     with col2:
         st.subheader("Cloud Assets")
