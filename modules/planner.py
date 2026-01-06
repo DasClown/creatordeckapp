@@ -35,6 +35,7 @@ def render_planner(supabase):
             platform TEXT DEFAULT 'Instagram',
             content_type TEXT DEFAULT 'Post',
             title TEXT,
+            caption TEXT,
             asset_url TEXT,
             created_at TIMESTAMP DEFAULT NOW()
         );
@@ -60,6 +61,7 @@ def render_planner(supabase):
             
             # Optionale Felder
             title = st.text_input("Titel / Hook")
+            caption = st.text_area("Caption", height=100, placeholder="Deine Caption für den Post...")
             
             # Bild-Upload
             uploaded_image = st.file_uploader("Bild / Thumbnail", type=["jpg", "png", "jpeg"])
@@ -97,6 +99,8 @@ def render_planner(supabase):
                     # Füge optionale Felder nur hinzu wenn Spalten existieren
                     if title and "title" in available_columns:
                         post_data["title"] = title
+                    if caption and "caption" in available_columns:
+                        post_data["caption"] = caption
                     if asset_url and "asset_url" in available_columns:
                         post_data["asset_url"] = asset_url
                     
@@ -149,6 +153,14 @@ def render_planner(supabase):
                         
                         with content_col2:
                             st.caption(f"**Platform:** {post.get('platform', 'N/A')} | **Typ:** {post.get('content_type', 'N/A')}")
+                            
+                            # Caption anzeigen (gekürzt)
+                            caption = post.get('caption', '')
+                            if caption:
+                                if len(caption) > 150:
+                                    st.text(caption[:150] + "...")
+                                else:
+                                    st.text(caption)
                             
                             # Delete Button
                             if st.button("🗑️ Löschen", key=f"delete_{post['id']}"):
