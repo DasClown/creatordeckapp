@@ -45,7 +45,7 @@ def render_finance(supabase):
             yaxis_gridcolor="#F0F0F0",
             font_color="#000000"
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     # Editor für neue Einträge
     st.subheader("Transaction Log")

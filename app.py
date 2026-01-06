@@ -393,6 +393,25 @@ def render_viral_share():
     with col1:
         st.markdown("### TWITTER/X")
         share_twitter = "https://twitter.com/intent/tweet?text=Gerade%20das%20neue%20Terminal%20von%20content-core.io%20entdeckt.%20Endlich%20Ordnung%20im%20Workflow.%20"
+        if st.button("SHARE ON X", key="share_x"):
+            st.session_state.full_access = True
+            st.success("FULL ENGINE ACTIVATED")
+            st.rerun()
+        st.markdown(f"[Open Twitter/X]({share_twitter})")
+    
+    with col2:
+        st.markdown("### REDDIT")
+        share_reddit = "https://reddit.com/submit?url=https://content-core.io&title=CONTENT%20CORE%20-%20Advanced%20Analytics%20for%20Creators"
+        if st.button("SHARE ON REDDIT", key="share_reddit"):
+            st.session_state.full_access = True
+            st.success("FULL ENGINE ACTIVATED")
+            st.rerun()
+        st.markdown(f"[Open Reddit]({share_reddit})")
+    
+    st.divider()
+    if st.button("SKIP & ACTIVATE", key="skip_share"):
+        st.session_state.full_access = True
+        st.rerun()
 # --- DASHBOARD & NAVIGATION ---
 def render_dashboard_layout():
     supabase = init_supabase()
@@ -434,7 +453,6 @@ def render_dashboard_layout():
     elif page == "DEMO":
         demo.render_demo()
     elif page == "FACTORY":
-        genai.configure(api_key=st.secrets.get("GEMINI_API_KEY"))
         factory.render_factory(supabase)
 
 def render_dashboard(supabase):
@@ -454,8 +472,18 @@ def render_dashboard(supabase):
                 st.markdown("#### Option B: Manual Data Entry")
                 with st.expander("Eckdaten eingeben"):
                     followers = st.number_input("Follower", value=1000)
+                    engagement = st.number_input("Engagement Rate (%)", value=3.5, step=0.1)
+                    quality = st.number_input("Quality Score", value=7.0, step=0.1)
                     if st.button("Initialize"):
-                        supabase.table("stats_history").insert({"platform": "instagram", "metric": "followers", "value": followers, "user_id": user_id}).execute()
+                        supabase.table("stats_history").insert({
+                            "user_id": user_id,
+                            "platform": "instagram",
+                            "handle": "manual_entry",
+                            "followers": int(followers),
+                            "engagement_rate": engagement / 100,
+                            "avg_likes": int(followers * engagement / 100),
+                            "quality_score": quality
+                        }).execute()
                         st.rerun()
         else:
             # Holen der neuesten Daten
