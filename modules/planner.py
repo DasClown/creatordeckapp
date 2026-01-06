@@ -53,23 +53,23 @@ def render_planner(supabase):
                 saved = False
                 error_msg = None
                 
-                # Variante 1: Versuche mit c_type (existierendes Schema)
+                # Variante 1: Versuche mit c_type (existierendes Schema) - NUR Pflichtfelder
                 try:
                     post_data = {
                         "publish_date": str(publish_date),
                         "platform": platform,
                         "c_type": content_type
                     }
-                    if title:
-                        post_data["title"] = title
-                    if caption:
-                        post_data["caption"] = caption
-                    if asset_url:
-                        post_data["asset_url"] = asset_url
+                    # Keine optionalen Felder - die Tabelle hat sie nicht!
                     
                     supabase.table("content_plan").insert(post_data).execute()
                     saved = True
                     st.success("✅ Post geplant!")
+                    
+                    # Warnung wenn Felder nicht gespeichert werden konnten
+                    if title or caption or asset_url:
+                        st.info("ℹ️ Titel, Caption und Bild werden nicht gespeichert (Spalten fehlen in Tabelle)")
+                    
                     st.rerun()
                 except Exception as e:
                     error_msg = str(e)
