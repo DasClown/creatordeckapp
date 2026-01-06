@@ -2,12 +2,20 @@ import streamlit as st
 import base64
 
 # --- 1. BOOT VERIFICATION (FAIL-SAFE) ---
-required_secrets = ["SUPABASE_URL", "SUPABASE_KEY", "RAPIDAPI_KEY", "RESEND_API_KEY", "GEMINI_API_KEY"]
-missing = [s for s in required_secrets if s not in st.secrets]
+# --- 1. BOOT VERIFICATION (FAIL-SAFE) ---
+# Critical: DB & Auth
+critical_secrets = ["SUPABASE_URL", "SUPABASE_KEY", "RESEND_API_KEY"]
+missing_critical = [s for s in critical_secrets if s not in st.secrets]
 
-if missing:
-    st.error(f"KRITISCHER FEHLER: Fehlende Secrets: {missing}")
+if missing_critical:
+    st.error(f"KRITISCHER FEHLER: Fehlende Secrets: {missing_critical}")
     st.stop()
+
+# Optional: Features
+optional_secrets = ["RAPIDAPI_KEY", "GEMINI_API_KEY"]
+missing_optional = [s for s in optional_secrets if s not in st.secrets]
+if missing_optional:
+    st.warning(f"Hinweis: Folgende Features sind eingeschränkt verfügbar (Keys fehlen): {missing_optional}")
 
 # --- 2. CORE IMPORTS (DEFERRED) ---
 try:
