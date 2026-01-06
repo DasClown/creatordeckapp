@@ -67,6 +67,11 @@ def send_verification_email(email):
         r = resend.Emails.send(params)
         return r
     except Exception as e:
+        # FALLBACK / BYPASS für Alpha: Link direkt anzeigen
+        st.warning(f"E-Mail Versand fehlgeschlagen: {e}")
+        st.success(f"**MANUELLER ZUGRIFF (Alpha Bypass):**\n\n[>>> HIER KLICKEN UM ZU VERIFIZIEREN <<<]({verify_url})")
+        return True # Wir geben True zurück damit der Flow weitergeht
+    except Exception as e:
         st.error(f"Resend Error: {str(e)}")
         return None
 
