@@ -21,27 +21,36 @@ def render_factory(supabase):
         
         if st.button("GENERATE CONTENT"):
             if topic:
-                with st.spinner("AI analysiert Top-Performance..."):
-                    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
-                    
-                    # Kontext-Vorbereitung aus DB
-                    context = top_data.to_string() if not top_data.empty else "Keine Historiendaten vorhanden."
-                    
-                    prompt = f"""
-                    Rolle: Content-Stratege für Creator.
-                    Thema: {topic}
-                    Vibe: {vibe}
-                    Performance-Kontext: {context}
-                    
-                    Aufgabe:
-                    1. Starker Hook (Scroll-Stopper).
-                    2. Kurze, prägnante Caption (Metric System nutzen).
-                    3. Visual-Idee für Reel/Foto.
-                    4. CTA basierend auf aktuellem Vibe.
-                    """
-                    
-                    response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
-                    st.session_state.factory_output = response.text
+                # Prüfe ob GEMINI_API_KEY verfügbar ist
+                if "GEMINI_API_KEY" not in st.secrets:
+                    st.error("GEMINI_API_KEY fehlt in den Secrets. Bitte in Streamlit Cloud Settings hinzufügen.")
+                    return
+                
+                try:
+                    with st.spinner("AI analysiert Top-Performance..."):
+                        client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+                        
+                        # Kontext-Vorbereitung aus DB
+                        context = top_data.to_string() if not top_data.empty else "Keine Historiendaten vorhanden."
+                        
+                        prompt = f"""
+                        Rolle: Content-Stratege für Creator.
+                        Thema: {topic}
+                        Vibe: {vibe}
+                        Performance-Kontext: {context}
+                        
+                        Aufgabe:
+                        1. Starker Hook (Scroll-Stopper).
+                        2. Kurze, prägnante Caption (Metric System nutzen).
+                        3. Visual-Idee für Reel/Foto.
+                        4. CTA basierend auf aktuellem Vibe.
+                        """
+                        
+                        response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
+                        st.session_state.factory_output = response.text
+                except Exception as e:
+                    st.error(f"AI Generation fehlgeschlagen: {str(e)}")
+                    st.info("Tipp: Prüfe ob GEMINI_API_KEY korrekt in den Streamlit Secrets konfiguriert ist.")
             else:
                 st.warning("Eingabe erforderlich.")
 
