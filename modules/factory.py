@@ -46,7 +46,7 @@ def render_factory(supabase):
                         4. CTA basierend auf aktuellem Vibe.
                         """
                         
-                        response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
+                        response = client.models.generate_content(model='gemini-2.0-flash-exp', contents=prompt)
                         st.session_state.factory_output = response.text
                 except Exception as e:
                     st.error(f"AI Generation fehlgeschlagen: {str(e)}")
