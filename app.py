@@ -67,7 +67,18 @@ def send_verification_email(email):
         r = resend.Emails.send(params)
         return r
     except Exception as e:
+        # DIAGNOSE für den User:
+        masked_key = "NICHT GESETZT"
+        try:
+            if resend.api_key:
+                masked_key = f"{resend.api_key[:5]}...{resend.api_key[-3:]}" if len(resend.api_key) > 8 else "ZU KURZ"
+        except:
+            masked_key = "FEHLER BEIM LESEN"
+            
         st.error(f"Resend Error: {str(e)}")
+        st.info(f"🔍 DEBUG: Key='{masked_key}' | Empfänger='{email}'")
+        st.info("Checkliste: 1. Key in Secrets korrekt? 2. 'Sandbox'-Limits beachtet (nur eigene Email)? 3. Leerzeichen im Key?")
+        st.markdown(f"[Manuelle Verifizierung (Notfall)]({verify_url})")
         return None
 
 def run_instagram_sync(profile_url, supabase):
