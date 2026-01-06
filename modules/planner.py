@@ -7,7 +7,7 @@ def render_planner(supabase):
     
     # Content-Kalender aus DB laden
     try:
-        res = supabase.table("content_calendar").select("*").execute()
+        res = supabase.table("content_plan").select("*").execute()
         
         if not res.data:
             st.info("Noch keine Content-Planung. Erstelle deinen ersten Post!")
@@ -50,10 +50,10 @@ def render_planner(supabase):
                     if index < len(res.data) and "id" in res.data[index]:
                         # Update existierender Eintrag
                         entry_id = res.data[index]["id"]
-                        supabase.table("content_calendar").update(calendar_data).eq("id", entry_id).execute()
+                        supabase.table("content_plan").update(calendar_data).eq("id", entry_id).execute()
                     else:
                         # Neuer Eintrag
-                        supabase.table("content_calendar").insert(calendar_data).execute()
+                        supabase.table("content_plan").insert(calendar_data).execute()
                 
                 st.success("Kalender gespeichert!")
                 st.rerun()
@@ -66,12 +66,12 @@ def render_planner(supabase):
         
         if "relation" in error_msg.lower() or "does not exist" in error_msg.lower():
             st.warning("""
-            **Die 'content_calendar' Tabelle fehlt in Supabase.**
+            **Die 'content_plan' Tabelle fehlt in Supabase.**
             
             Erstelle sie mit dieser SQL-Query:
             
             ```sql
-            CREATE TABLE IF NOT EXISTS content_calendar (
+            CREATE TABLE IF NOT EXISTS content_plan (
                 id SERIAL PRIMARY KEY,
                 date TEXT,
                 platform TEXT DEFAULT 'Instagram',
@@ -82,7 +82,7 @@ def render_planner(supabase):
                 created_at TIMESTAMP DEFAULT NOW()
             );
             
-            ALTER TABLE content_calendar DISABLE ROW LEVEL SECURITY;
+            ALTER TABLE content_plan DISABLE ROW LEVEL SECURITY;
             ```
             
             **Alternative:** PLANNER-Feature vorübergehend nicht nutzen
