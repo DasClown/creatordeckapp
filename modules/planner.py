@@ -61,18 +61,19 @@ def render_planner(supabase):
                 
                 # Post in Datenbank speichern
                 try:
-                    # Flexibles Schema: Unterstütze beide Spaltennamen
+                    # Minimales Schema: Nur existierende Spalten verwenden
                     post_data = {
-                        "publish_date": str(publish_date),  # Existierendes Schema
+                        "publish_date": str(publish_date),
                         "platform": platform,
-                        "content_type": content_type,
-                        "title": title,
-                        "caption": caption,
-                        "hashtags": hashtags,
-                        "image_url": image_url,
-                        "status": status,
-                        "user_id": st.session_state.get('user_email', 'unknown')
+                        "content_type": content_type
                     }
+                    
+                    # Optional: Füge Felder nur hinzu wenn sie in der Tabelle existieren
+                    # Diese werden ignoriert wenn die Spalten fehlen
+                    if title:
+                        post_data["title"] = title
+                    if image_url:
+                        post_data["asset_url"] = image_url  # Existierendes Schema nutzt asset_url
                     
                     supabase.table("content_plan").insert(post_data).execute()
                     st.success("✅ Post geplant!")
