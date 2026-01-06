@@ -328,9 +328,19 @@ def render_styles():
 # --- LANDING PAGE ---
 def render_landing_page():
     # Zentrales Logo
-    c1, c2, c3 = st.columns([2, 1, 2])
-    with c2:
-        st.image("assets/logo_icon.jpg", width=120)
+    # Zentrales Logo (mit HTML/CSS zentriert für perfekte Ausrichtung)
+    with open("assets/logo_icon.jpg", "rb") as f:
+        img_data = f.read()
+    img_base64 = base64.b64encode(img_data).decode()
+    
+    st.markdown(
+        f"""
+        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+            <img src="data:image/jpg;base64,{img_base64}" width="120" style="border-radius: 50%;">
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     
     st.markdown("<h1>CONTENT CORE</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #666;'>SYSTEM INITIALIZATION</p>", unsafe_allow_html=True)
@@ -403,9 +413,19 @@ def render_landing_page():
 
 # --- VIEW MANAGEMENT & AUTH ---
 def render_auth_interface():
-    c1, c2, c3 = st.columns([1, 2, 1])
-    with c2:
-        st.image("assets/logo_horizontal.jpg", width=250)
+    # Auth Logo Zentriert
+    with open("assets/logo_horizontal.jpg", "rb") as f:
+        img_data = f.read()
+    img_base64 = base64.b64encode(img_data).decode()
+    
+    st.markdown(
+        f"""
+        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+            <img src="data:image/jpg;base64,{img_base64}" width="250">
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
     
     auth_tab1, auth_tab2 = st.tabs(["REGISTRIERUNG", "LOGIN"])
