@@ -8,6 +8,44 @@ import uuid
 def render_planner(supabase):
     st.title("CONTENT PLANNER")
     
+    # Prüfe ob Tabelle existiert und welche Spalten vorhanden sind
+    try:
+        test_query = supabase.table("content_plan").select("*").limit(1).execute()
+        table_exists = True
+        
+        # Erkenne vorhandene Spalten
+        if test_query.data:
+            available_columns = list(test_query.data[0].keys())
+        else:
+            # Tabelle leer, versuche Insert mit Minimal-Schema
+            available_columns = ["publish_date", "platform", "content_type"]
+    except:
+        table_exists = False
+        available_columns = []
+    
+    if not table_exists:
+        st.error("📋 **CONTENT_PLAN TABELLE FEHLT**")
+        st.info("""
+        Erstelle die Tabelle in Supabase mit dieser SQL-Query:
+        
+        ```sql
+        CREATE TABLE IF NOT EXISTS content_plan (
+            id SERIAL PRIMARY KEY,
+            publish_date TEXT,
+            platform TEXT DEFAULT 'Instagram',
+            content_type TEXT DEFAULT 'Post',
+            title TEXT,
+            asset_url TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        
+        ALTER TABLE content_plan DISABLE ROW LEVEL SECURITY;
+        ```
+        
+        **Oder nutze andere Module** - PLANNER ist optional!
+        """)
+        return
+    
     # Zwei-Spalten Layout
     col1, col2 = st.columns([1, 2])
     
@@ -15,72 +53,59 @@ def render_planner(supabase):
         st.subheader("📝 Neuen Post planen")
         
         with st.form("new_post_form", clear_on_submit=True):
-            # Datum & Platform
+            # Basis-Felder (immer vorhanden)
             publish_date = st.date_input("Veröffentlichungsdatum", datetime.now())
             platform = st.selectbox("Platform", ["Instagram", "TikTok", "YouTube", "LinkedIn"])
-            
-            # Content Details
             content_type = st.selectbox("Content-Typ", ["Reel", "Post", "Story", "Video", "Carousel"])
-            title = st.text_input("Titel / Hook")
-            caption = st.text_area("Caption / Beschreibung", height=100)
             
-            # Hashtags
-            hashtags = st.text_input("Hashtags (durch Leerzeichen getrennt)")
+            # Optionale Felder
+            title = st.text_input("Titel / Hook")
             
             # Bild-Upload
             uploaded_image = st.file_uploader("Bild / Thumbnail", type=["jpg", "png", "jpeg"])
-            
-            # Status
-            status = st.selectbox("Status", ["Geplant", "In Arbeit", "Bereit", "Veröffentlicht"])
             
             # Submit
             submit = st.form_submit_button("📅 POST PLANEN", use_container_width=True)
             
             if submit:
                 # Bild zu Supabase Storage hochladen (falls vorhanden)
-                image_url = None
+                asset_url = None
                 if uploaded_image:
                     try:
-                        # Bild verarbeiten
                         img = Image.open(uploaded_image)
                         if img.mode != 'RGB':
                             img = img.convert('RGB')
                         
-                        # In Buffer speichern
                         buf = io.BytesIO()
                         img.save(buf, format="PNG")
                         buf.seek(0)
                         
-                        # Upload zu Supabase Storage
                         file_path = f"content_plan/{uuid.uuid4()}.png"
                         supabase.storage.from_("assets").upload(file_path, buf.getvalue())
-                        image_url = supabase.storage.from_("assets").get_public_url(file_path)
-                        
+                        asset_url = supabase.storage.from_("assets").get_public_url(file_path)
                     except Exception as e:
                         st.warning(f"Bild-Upload fehlgeschlagen: {str(e)}")
                 
-                # Post in Datenbank speichern
+                # Post speichern - nur Felder die existieren
                 try:
-                    # Minimales Schema: Nur existierende Spalten verwenden
                     post_data = {
                         "publish_date": str(publish_date),
                         "platform": platform,
                         "content_type": content_type
                     }
                     
-                    # Optional: Füge Felder nur hinzu wenn sie in der Tabelle existieren
-                    # Diese werden ignoriert wenn die Spalten fehlen
-                    if title:
+                    # Füge optionale Felder nur hinzu wenn Spalten existieren
+                    if title and "title" in available_columns:
                         post_data["title"] = title
-                    if image_url:
-                        post_data["asset_url"] = image_url  # Existierendes Schema nutzt asset_url
+                    if asset_url and "asset_url" in available_columns:
+                        post_data["asset_url"] = asset_url
                     
                     supabase.table("content_plan").insert(post_data).execute()
                     st.success("✅ Post geplant!")
                     st.rerun()
                     
                 except Exception as e:
-                    st.error(f"Fehler beim Speichern: {str(e)}")
+                    st.error(f"Fehler: {str(e)}")
     
     with col2:
         st.subheader("📅 Geplante Posts")
@@ -89,115 +114,48 @@ def render_planner(supabase):
         filter_col1, filter_col2 = st.columns(2)
         with filter_col1:
             filter_platform = st.selectbox("Filter Platform", ["Alle", "Instagram", "TikTok", "YouTube", "LinkedIn"], key="filter_platform")
-        with filter_col2:
-            filter_status = st.selectbox("Filter Status", ["Alle", "Geplant", "In Arbeit", "Bereit", "Veröffentlicht"], key="filter_status")
         
-        # Posts aus DB laden
+        # Posts laden
         try:
-            user_id = st.session_state.get('user_email', 'unknown')
-            query = supabase.table("content_plan").select("*").eq("user_id", user_id).order("date", desc=False)
-            res = query.execute()
+            res = supabase.table("content_plan").select("*").order("publish_date", desc=False).execute()
             
             if res.data:
                 posts = res.data
                 
-                # Spalten-Mapping: Unterstütze beide Schemas
-                for post in posts:
-                    # Wenn publish_date existiert aber date nicht, mappe es
-                    if 'publish_date' in post and 'date' not in post:
-                        post['date'] = post['publish_date']
-                
-                # Filter anwenden
+                # Filter
                 if filter_platform != "Alle":
                     posts = [p for p in posts if p.get("platform") == filter_platform]
-                if filter_status != "Alle":
-                    posts = [p for p in posts if p.get("status") == filter_status]
                 
-                # Posts als Cards anzeigen
+                # Posts als Cards
                 for post in posts:
                     with st.container():
                         st.markdown("---")
                         
-                        # Header mit Datum und Platform
-                        post_col1, post_col2, post_col3 = st.columns([2, 1, 1])
+                        # Header
+                        post_col1, post_col2 = st.columns([3, 1])
                         with post_col1:
-                            st.markdown(f"**{post.get('title', 'Kein Titel')}**")
+                            st.markdown(f"**{post.get('title', post.get('content_type', 'Post'))}**")
                         with post_col2:
-                            st.caption(f"📅 {post.get('date', 'N/A')}")
-                        with post_col3:
-                            # Status Badge
-                            status_emoji = {
-                                "Geplant": "📝",
-                                "In Arbeit": "⚙️",
-                                "Bereit": "✅",
-                                "Veröffentlicht": "🚀"
-                            }
-                            st.caption(f"{status_emoji.get(post.get('status', ''), '📝')} {post.get('status', 'N/A')}")
+                            st.caption(f"📅 {post.get('publish_date', 'N/A')}")
                         
                         # Content
                         content_col1, content_col2 = st.columns([1, 2])
                         
                         with content_col1:
-                            # Bild anzeigen (falls vorhanden)
-                            if post.get('image_url'):
-                                st.image(post['image_url'], width=150)
+                            if post.get('asset_url'):
+                                st.image(post['asset_url'], width=150)
                             else:
                                 st.info("Kein Bild")
                         
                         with content_col2:
                             st.caption(f"**Platform:** {post.get('platform', 'N/A')} | **Typ:** {post.get('content_type', 'N/A')}")
                             
-                            # Caption (gekürzt)
-                            caption = post.get('caption', '')
-                            if caption:
-                                if len(caption) > 150:
-                                    st.text(caption[:150] + "...")
-                                else:
-                                    st.text(caption)
-                            
-                            # Hashtags
-                            if post.get('hashtags'):
-                                st.caption(f"🏷️ {post.get('hashtags')}")
-                            
-                            # Actions
-                            action_col1, action_col2 = st.columns(2)
-                            with action_col1:
-                                if st.button("🗑️ Löschen", key=f"delete_{post['id']}"):
-                                    supabase.table("content_plan").delete().eq("id", post['id']).execute()
-                                    st.rerun()
-                            with action_col2:
-                                if st.button("✏️ Bearbeiten", key=f"edit_{post['id']}"):
-                                    st.info("Bearbeiten-Feature kommt bald!")
+                            # Delete Button
+                            if st.button("🗑️ Löschen", key=f"delete_{post['id']}"):
+                                supabase.table("content_plan").delete().eq("id", post['id']).execute()
+                                st.rerun()
             else:
                 st.info("📭 Noch keine Posts geplant. Erstelle deinen ersten Post links!")
                 
         except Exception as e:
-            error_msg = str(e)
-            st.error("PLANNER Fehler")
-            
-            if "relation" in error_msg.lower() or "does not exist" in error_msg.lower():
-                st.warning("""
-                **Die 'content_plan' Tabelle fehlt in Supabase.**
-                
-                Erstelle sie mit dieser SQL-Query:
-                
-                ```sql
-                CREATE TABLE IF NOT EXISTS content_plan (
-                    id SERIAL PRIMARY KEY,
-                    date TEXT,
-                    platform TEXT DEFAULT 'Instagram',
-                    content_type TEXT DEFAULT 'Post',
-                    title TEXT,
-                    caption TEXT,
-                    hashtags TEXT,
-                    image_url TEXT,
-                    status TEXT DEFAULT 'Geplant',
-                    user_id TEXT,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-                
-                ALTER TABLE content_plan DISABLE ROW LEVEL SECURITY;
-                ```
-                """)
-            else:
-                st.info(f"Fehler: {error_msg}")
+            st.error(f"Fehler beim Laden: {str(e)}")
