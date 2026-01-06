@@ -39,7 +39,7 @@ def send_verification_email(email):
     # WICHTIG: Im Sandbox-Modus darf NUR an deine eigene E-Mail gesendet werden.
     # WICHTIG: Absender MUSS onboarding@resend.dev sein.
     
-    verify_url = f"https://www.content-core.io/?verify={email}" # Deine neue Domain
+    verify_url = f"https://www.content-core.com/?verify={email}" # Deine neue Domain
     
     try:
         params = {
@@ -379,7 +379,7 @@ def render_landing_page():
                             else:
                                 st.warning("E-Mail konnte nicht gesendet werden, aber dein Eintrag wurde gespeichert.")
                             
-                            st.info(f"ALPHA DEBUG: Bitte prüfe dein Postfach. Link: https://www.content-core.io/?verify={email}")
+                            st.info(f"ALPHA DEBUG: Bitte prüfe dein Postfach. Link: https://www.content-core.com/?verify={email}")
                             # In einer Alpha-Phase können wir den Link zum Testen anzeigen
                     except Exception as e:
                         st.error(f"Fehler beim Speichern: {str(e)}")
@@ -498,7 +498,7 @@ def render_viral_share():
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("### TWITTER/X")
-        share_twitter = "https://twitter.com/intent/tweet?text=Gerade%20das%20neue%20Terminal%20von%20content-core.io%20entdeckt.%20Endlich%20Ordnung%20im%20Workflow.%20"
+        share_twitter = "https://twitter.com/intent/tweet?text=Gerade%20das%20neue%20Terminal%20von%20content-core.com%20entdeckt.%20Endlich%20Ordnung%20im%20Workflow.%20"
         if st.button("SHARE ON X", key="share_x"):
             st.session_state.full_access = True
             st.success("FULL ENGINE ACTIVATED")
@@ -507,7 +507,7 @@ def render_viral_share():
     
     with col2:
         st.markdown("### REDDIT")
-        share_reddit = "https://reddit.com/submit?url=https://content-core.io&title=CONTENT%20CORE%20-%20Advanced%20Analytics%20for%20Creators"
+        share_reddit = "https://reddit.com/submit?url=https://content-core.com&title=CONTENT%20CORE%20-%20Advanced%20Analytics%20for%20Creators"
         if st.button("SHARE ON REDDIT", key="share_reddit"):
             st.session_state.full_access = True
             st.success("FULL ENGINE ACTIVATED")
