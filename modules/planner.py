@@ -90,11 +90,17 @@ def render_planner(supabase):
                 
                 # Post speichern - nur Felder die existieren
                 try:
+                    # Basis-Felder mit Schema-Mapping
                     post_data = {
                         "publish_date": str(publish_date),
-                        "platform": platform,
-                        "content_type": content_type
+                        "platform": platform
                     }
+                    
+                    # content_type kann c_type oder content_type heißen
+                    if "c_type" in available_columns:
+                        post_data["c_type"] = content_type
+                    elif "content_type" in available_columns:
+                        post_data["content_type"] = content_type
                     
                     # Füge optionale Felder nur hinzu wenn Spalten existieren
                     if title and "title" in available_columns:
@@ -125,6 +131,12 @@ def render_planner(supabase):
             
             if res.data:
                 posts = res.data
+                
+                # Spalten-Mapping für Anzeige
+                for post in posts:
+                    # Mappe c_type zu content_type für einheitliche Anzeige
+                    if 'c_type' in post and 'content_type' not in post:
+                        post['content_type'] = post['c_type']
                 
                 # Filter
                 if filter_platform != "Alle":
