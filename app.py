@@ -582,12 +582,18 @@ def render_dashboard(supabase):
             if latest_stats.data:
                 latest = latest_stats.data[0]
                 
-                # KPI GRID (4 Spalten)
+                # KPI GRID (4 Spalten) - mit None-Checks
                 col1, col2, col3, col4 = st.columns(4)
-                col1.metric("FOLLOWERS", f"{int(latest['followers']):,}")
-                col2.metric("ENGAGEMENT", f"{float(latest['engagement_rate']):.2%}")
-                col3.metric("CORE SCORE", f"{float(latest['quality_score']):.1f}")
-                col4.metric("REACH INDEX", f"{int(latest['followers'] * 0.12):,}") # Kalkulierter Wert
+                
+                # Sichere Werte mit Fallbacks
+                followers = latest.get('followers') or 0
+                engagement = latest.get('engagement_rate') or 0.0
+                quality = latest.get('quality_score') or 0.0
+                
+                col1.metric("FOLLOWERS", f"{int(followers):,}")
+                col2.metric("ENGAGEMENT", f"{float(engagement):.2%}")
+                col3.metric("CORE SCORE", f"{float(quality):.1f}")
+                col4.metric("REACH INDEX", f"{int(followers * 0.12):,}") # Kalkulierter Wert
 
                 # ANALYTICS GRAPH
                 st.markdown("### GROWTH TRAJECTORY")
