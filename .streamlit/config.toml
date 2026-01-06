@@ -1,9 +1,12 @@
 [theme]
-primaryColor = "#FFFFFF"        # Akzente in Weiß (Monochromer Look)
-backgroundColor = "#000000"     # Antigravity Black
-secondaryBackgroundColor = "#111111" # Sehr dunkles Grau für Sidebar
-textColor = "#FFFFFF"           # Reines Weiß
+primaryColor = "#000000"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F8F8F8"
+textColor = "#000000"
 font = "sans serif"
 
 [server]
-runOnSave = true
+headless = true
+enableCORS = false
+enableXsrfProtection = true
+# Cache invalidation
