@@ -1,43 +1,91 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime
 
 def render_planner(supabase):
     st.title("PLANNER")
-
-    res = supabase.table("content_plan").select("*").execute()
-    df_plan = pd.DataFrame(res.data)
-
-    # Quick Add Form
-    with st.expander("ADD NEW CONTENT"):
-        with st.form("planner_form"):
-            date = st.date_input("Date")
-            platform = st.selectbox("Platform", ["Instagram", "YouTube", "TikTok"])
-            c_type = st.selectbox("Type", ["Reel", "Video", "Post", "Story"])
-            title = st.text_input("Title/Hook")
+    
+    # Content-Kalender aus DB laden
+    try:
+        res = supabase.table("content_calendar").select("*").execute()
+        
+        if not res.data:
+            st.info("Noch keine Content-Planung. Erstelle deinen ersten Post!")
+            df_calendar = pd.DataFrame(columns=["date", "platform", "content_type", "status", "notes"])
+        else:
+            df_calendar = pd.DataFrame(res.data)
             
-            # Asset Linking aus Gallery
+            # Stelle sicher dass alle erforderlichen Spalten existieren
+            required_cols = ["date", "platform", "content_type", "status", "notes"]
+            for col in required_cols:
+                if col not in df_calendar.columns:
+                    df_calendar[col] = ""
+        
+        # UI
+        st.subheader("Content Calendar")
+        edited_df = st.data_editor(
+            df_calendar[["date", "platform", "content_type", "status", "notes"]], 
+            width="stretch", 
+            hide_index=True, 
+            num_rows="dynamic"
+        )
+        
+        if st.button("SAVE CALENDAR"):
             try:
-                files = supabase.storage.from_("assets").list("branded")
-                file_options = [f['name'] for f in files] if files else []
-                selected_asset = st.selectbox("Link Asset", ["None"] + file_options)
-            except:
-                selected_asset = "None"
-                st.caption("Gallery Assets nicht verfügbar")
-            
-            if st.form_submit_button("Schedule"):
-                asset_url = None
-                if selected_asset != "None":
-                    asset_url = supabase.storage.from_("assets").get_public_url(f"branded/{selected_asset}")
+                # Logik zum Updaten/Einfügen in Supabase
+                for index, row in edited_df.iterrows():
+                    # Skip leere Zeilen
+                    if not row.get("date") and not row.get("platform"):
+                        continue
+                        
+                    calendar_data = {
+                        "date": str(row.get("date", "")),
+                        "platform": str(row.get("platform", "Instagram")),
+                        "content_type": str(row.get("content_type", "Post")),
+                        "status": str(row.get("status", "Planned")),
+                        "notes": str(row.get("notes", ""))
+                    }
+                    
+                    # Prüfe ob Eintrag bereits existiert (hat ID)
+                    if index < len(res.data) and "id" in res.data[index]:
+                        # Update existierender Eintrag
+                        entry_id = res.data[index]["id"]
+                        supabase.table("content_calendar").update(calendar_data).eq("id", entry_id).execute()
+                    else:
+                        # Neuer Eintrag
+                        supabase.table("content_calendar").insert(calendar_data).execute()
                 
-                supabase.table("content_plan").insert({
-                    "publish_date": str(date), 
-                    "platform": platform, 
-                    "content_type": c_type, 
-                    "title": title,
-                    "asset_url": asset_url
-                }).execute()
+                st.success("Kalender gespeichert!")
                 st.rerun()
-
-    if not df_plan.empty:
-        st.subheader("Upcoming Schedule")
-        st.dataframe(df_plan.sort_values("publish_date"), width="stretch", hide_index=True)
+            except Exception as e:
+                st.error(f"Fehler beim Speichern: {str(e)}")
+                
+    except Exception as e:
+        error_msg = str(e)
+        st.error("PLANNER Fehler")
+        
+        if "relation" in error_msg.lower() or "does not exist" in error_msg.lower():
+            st.warning("""
+            **Die 'content_calendar' Tabelle fehlt in Supabase.**
+            
+            Erstelle sie mit dieser SQL-Query:
+            
+            ```sql
+            CREATE TABLE IF NOT EXISTS content_calendar (
+                id SERIAL PRIMARY KEY,
+                date TEXT,
+                platform TEXT DEFAULT 'Instagram',
+                content_type TEXT DEFAULT 'Post',
+                status TEXT DEFAULT 'Planned',
+                notes TEXT,
+                user_id TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+            
+            ALTER TABLE content_calendar DISABLE ROW LEVEL SECURITY;
+            ```
+            
+            **Alternative:** PLANNER-Feature vorübergehend nicht nutzen
+            """)
+        else:
+            st.info(f"Fehler: {error_msg}")
