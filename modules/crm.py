@@ -11,88 +11,98 @@ def render_crm(supabase):
         
         if not res.data:
             st.info("Keine Deals gefunden. Starte eine neue Verhandlung!")
-            # Create an empty DataFrame with the expected columns for the editor
-            df_deals = pd.DataFrame(columns=["brand", "stage", "value", "date"])
+            # Create an empty DataFrame with flexible columns
+            df_deals = pd.DataFrame(columns=["brand", "status", "value", "deadline"])
         else:
             df_deals = pd.DataFrame(res.data)
+            
+            # Spalten-Mapping: Unterstütze beide Schemas
+            # Altes Schema: brand, status, value, deadline
+            # Neues Schema: brand, stage, value, date
+            if 'stage' in df_deals.columns and 'status' not in df_deals.columns:
+                df_deals.rename(columns={'stage': 'status'}, inplace=True)
+            if 'date' in df_deals.columns and 'deadline' not in df_deals.columns:
+                df_deals.rename(columns={'date': 'deadline'}, inplace=True)
+            
+            # Stelle sicher dass alle erforderlichen Spalten existieren
+            required_cols = ["brand", "status", "value", "deadline"]
+            for col in required_cols:
+                if col not in df_deals.columns:
+                    df_deals[col] = ""
         
-        # Prüfe ob erforderliche Spalten existieren
-        required_columns = ["brand", "stage", "value", "date"]
-        missing_columns = [col for col in required_columns if col not in df_deals.columns]
+        # UI
+        st.subheader("Active Pipeline")
+        edited_df = st.data_editor(
+            df_deals[["brand", "status", "value", "deadline"]], 
+            width="stretch", 
+            hide_index=True, 
+            num_rows="dynamic"
+        )
         
-        if missing_columns:
-            st.error(f"🗂️ **DATENBANK-SCHEMA FEHLER**")
-            st.warning(f"""
-            Die 'deals' Tabelle fehlt folgende Spalten: {', '.join(missing_columns)}
-            
-            **Erforderliche Spalten:**
-            - brand (text)
-            - stage (text)
-            - value (text oder numeric)
-            - date (date oder text)
-            
-            **Lösung:**
-            1. Gehe zu Supabase Dashboard
-            2. SQL Editor → Neue Query
-            3. Erstelle Tabelle mit korrektem Schema:
-            
-            ```sql
-            CREATE TABLE IF NOT EXISTS deals (
-                id SERIAL PRIMARY KEY,
-                brand TEXT,
-                stage TEXT,
-                value TEXT,
-                date TEXT,
-                created_at TIMESTAMP DEFAULT NOW()
-            );
-            ```
-            
-            **Alternative:** CRM-Feature vorübergehend nicht nutzen
-            """)
-            return
-    except Exception as e:
-        st.error(f"CRM Datenbankfehler: {str(e)}")
-        st.info("Tipp: Prüfe ob 'deals' Tabelle in Supabase existiert")
-        return
-
-    # UI
-    st.subheader("Active Pipeline")
-    edited_df = st.data_editor(df_deals, width="stretch", hide_index=True, num_rows="dynamic")
-    
-    if st.button("SAVE CHANGES"):
-        # Logik zum Updaten/Einfügen in Supabase
-        for index, row in edited_df.iterrows():
-            deal_data = {
-                "brand": row["brand"],
-                "status": row["status"],
-                "value": row["value"],
-                "deadline": row["deadline"]
-            }
-            if "id" in row and pd.notnull(row["id"]):
-                supabase.table("deals").update(deal_data).eq("id", row["id"]).execute()
-            else:
-                supabase.table("deals").insert(deal_data).execute()
-            
-            # Automatischer Finance-Sync für geschlossene Deals
-            if row["status"] == "Closed":
-                # Prüfen, ob bereits eine Transaktion für diesen Deal existiert (Double-Entry Schutz)
-                check = supabase.table("transactions").select("id").eq("description", f"Deal: {row['brand']}").execute()
-                
-                if not check.data:
-                    # Wert als Float konvertieren (entfernt € und Kommas)
-                    try:
-                        amount = float(str(row["value"]).replace("€", "").replace(".", "").replace(",", ".").strip())
-                    except:
-                        amount = 0
+        if st.button("SAVE CHANGES"):
+            # Logik zum Updaten/Einfügen in Supabase
+            for index, row in edited_df.iterrows():
+                # Skip leere Zeilen
+                if not row.get("brand"):
+                    continue
                     
-                    supabase.table("transactions").insert({
-                        "type": "Income",
-                        "amount": amount,
-                        "category": "Brand Deal",
-                        "description": f"Deal: {row['brand']}",
-                        "date": str(row["deadline"])
-                    }).execute()
-                    st.toast(f"Finance: {row['brand']} als Einnahme verbucht!")
+                deal_data = {
+                    "brand": str(row.get("brand", "")),
+                    "status": str(row.get("status", "Negotiating")),
+                    "value": str(row.get("value", "")),
+                    "deadline": str(row.get("deadline", ""))
+                }
+                
+                # Prüfe ob Deal bereits existiert (hat ID)
+                if index < len(res.data) and "id" in res.data[index]:
+                    # Update existierender Deal
+                    deal_id = res.data[index]["id"]
+                    supabase.table("deals").update(deal_data).eq("id", deal_id).execute()
+                else:
+                    # Neuer Deal
+                    supabase.table("deals").insert(deal_data).execute()
+                
+                # Automatischer Finance-Sync für geschlossene Deals
+                if row.get("status") == "Closed":
+                    # Prüfen, ob bereits eine Transaktion für diesen Deal existiert
+                    check = supabase.table("transactions").select("id").eq("description", f"Deal: {row['brand']}").execute()
+                    
+                    if not check.data:
+                        # Wert als Float konvertieren (entfernt € und Kommas)
+                        try:
+                            value_str = str(row.get("value", "0"))
+                            amount = float(value_str.replace("€", "").replace(".", "").replace(",", ".").strip())
+                        except:
+                            amount = 0
+                        
+                        if amount > 0:
+                            supabase.table("transactions").insert({
+                                "type": "Income",
+                                "amount": amount,
+                                "category": "Brand Deal",
+                                "description": f"Deal: {row['brand']}",
+                                "date": str(row.get("deadline", ""))
+                            }).execute()
+                            st.toast(f"Finance: {row['brand']} als Einnahme verbucht!")
+            
+            st.success("Daten synchronisiert.")
+            st.rerun()
+            
+    except Exception as e:
+        st.error(f"CRM Fehler: {str(e)}")
+        st.info("""
+        **Tipp:** Erstelle die 'deals' Tabelle in Supabase:
         
-        st.success("Daten synchronisiert.")
-
+        ```sql
+        CREATE TABLE IF NOT EXISTS deals (
+            id SERIAL PRIMARY KEY,
+            brand TEXT,
+            status TEXT DEFAULT 'Negotiating',
+            value TEXT,
+            deadline TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        
+        ALTER TABLE deals DISABLE ROW LEVEL SECURITY;
+        ```
+        """)
