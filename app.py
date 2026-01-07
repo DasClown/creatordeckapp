@@ -48,6 +48,60 @@ def init_supabase():
     """Initialisierte Supabase-Instanz zurückgeben (gecacht für Performance)"""
     return supabase
 
+def send_system_mail(recipient, subject, body, email_type="system"):
+    """
+    Generische System-Email-Funktion mit Logging.
+    
+    Args:
+        recipient: Email-Adresse des Empfängers
+        subject: Betreff der Email
+        body: HTML-Body der Email
+        email_type: Typ der Email für Logging (default: "system")
+    
+    Returns:
+        True bei Erfolg, False bei Fehler
+    """
+    try:
+        # Versand über verified domain
+        result = resend.Emails.send({
+            "from": "Content Core <system@content-core.com>",
+            "to": [recipient],
+            "subject": subject,
+            "html": body
+        })
+        
+        # Erfolgreicher Versand -> Log in Supabase
+        try:
+            supabase = init_supabase()
+            supabase.table("email_logs").insert({
+                "recipient": recipient,
+                "subject": subject,
+                "status": "success",
+                "email_type": email_type
+            }).execute()
+        except Exception as log_error:
+            print(f"Email-Logging fehlgeschlagen: {log_error}")
+        
+        return True
+        
+    except Exception as e:
+        # Fehler beim Versand -> Log in Supabase
+        error_msg = str(e)
+        try:
+            supabase = init_supabase()
+            supabase.table("email_logs").insert({
+                "recipient": recipient,
+                "subject": subject,
+                "status": "failed",
+                "error_message": error_msg,
+                "email_type": email_type
+            }).execute()
+        except Exception as log_error:
+            print(f"Email-Logging fehlgeschlagen: {log_error}")
+        
+        st.error(f"MAIL ENGINE ERROR: {error_msg}")
+        return False
+
 def send_verification_email(email):
     """Sendet Verifizierungs-Email via Resend mit verified domain und loggt den Versand."""
     verify_url = f"https://www.content-core.com/?verify={email}"
