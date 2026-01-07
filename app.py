@@ -51,15 +51,15 @@ def send_verification_email(email):
     
     try:
         params = {
-            "from": "CONTENT-CORE <onboarding@resend.dev>",
+            "from": "Content Core <info@content-core.com>", # Deine verifizierte Domain
             "to": [email],
-            "subject": "Systemzugriff: CONTENT CORE verifizieren",
+            "subject": "System Activated",
             "html": f"""
                 <div style='font-family: monospace; border: 1px solid #000; padding: 20px; max-width: 400px;'>
                     <h2 style='font-weight: 300; letter-spacing: -1px;'>CONTENT CORE</h2>
-                    <p style='font-size: 14px;'>Initialisierung des Terminals für: <b>{email}</b></p>
+                    <p style='font-size: 14px;'>Engine is running. Initialisierung für: <b>{email}</b></p>
                     <hr style='border: 0; border-top: 1px solid #eee; margin: 20px 0;'>
-                    <a href='{verify_url}' style='background: #000; color: #fff; padding: 10px 15px; text-decoration: none; display: inline-block; font-size: 12px;'>VERIFY ACCESS</a>
+                    <a href='{verify_url}' style='background: #000; color: #fff; padding: 10px 15px; text-decoration: none; display: inline-block; font-size: 12px;'>ACTIVATE SYSTEM</a>
                 </div>
             """
         }
