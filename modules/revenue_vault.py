@@ -283,6 +283,62 @@ def render_revenue_vault(supabase):
                 else:
                     st.warning("Asset name required")
         
+        # Whale Watcher
+        st.markdown("---")
+        whale_watcher(supabase)
+        
     except Exception as e:
         st.error(f"ANALYTICS ERROR: {e}")
         st.info("💡 Make sure you've run the migration: migrations/004_revenue_vault_schema.sql")
+
+def whale_watcher(supabase):
+    """
+    Zeigt Top Spender basierend auf Revenue History.
+    
+    Aggregiert Umsatz nach Source-Feld (z.B. PPV, Tips, Subscription).
+    Nützlich für schnelle Übersicht ohne dedizierte Customer-Tabelle.
+    """
+    st.subheader("🐋 WHALE WATCHER (TOP SPENDER)")
+    
+    user_email = st.session_state.get('user_email', 'unknown')
+    
+    try:
+        # Aggregiere Umsatz pro Source
+        res = supabase.table("revenue_history")\
+            .select("source, amount_net, platform")\
+            .eq("user_id", user_email)\
+            .execute()
+        
+        if res.data and len(res.data) > 0:
+            df = pd.DataFrame(res.data)
+            
+            # Top Spender nach Source
+            top_spenders = df.groupby('source')['amount_net'].sum().sort_values(ascending=False).head(5)
+            
+            if not top_spenders.empty:
+                st.markdown("**Top 5 Revenue Sources:**")
+                
+                # Als formatierte Tabelle
+                top_df = pd.DataFrame({
+                    'Source': top_spenders.index,
+                    'Total Revenue ($)': top_spenders.values
+                })
+                top_df['Total Revenue ($)'] = top_df['Total Revenue ($)'].apply(lambda x: f"${x:,.2f}")
+                
+                st.dataframe(
+                    top_df,
+                    use_container_width=True,
+                    hide_index=True
+                )
+                
+                # Zusätzliche Insights
+                col1, col2 = st.columns(2)
+                col1.metric("TOP SOURCE", top_spenders.index[0].upper())
+                col2.metric("TOP REVENUE", f"${top_spenders.values[0]:,.2f}")
+            else:
+                st.info("Keine Spender-Daten vorhanden")
+        else:
+            st.info("💡 Noch keine Revenue-Daten. Logge Transaktionen in der Sidebar.")
+            
+    except Exception as e:
+        st.error(f"Whale Watcher Error: {e}")
