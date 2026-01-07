@@ -432,7 +432,28 @@ def render_landing_page():
         st.markdown("</div>", unsafe_allow_html=True)
 
 # --- VIEW MANAGEMENT & AUTH ---
+def check_access(email):
+    """Prüft Zugriff - Hardcoded Admin + Datenbank-Prüfung"""
+    # Hardcode für Initialzugriff während Setup
+    if email == "janick@icanhasbucket.de":
+        st.session_state.access_granted = True
+        st.session_state.user_email = email
+        return True
+    
+    # Reguläre Datenbank-Prüfung
+    try:
+        supabase = init_supabase()
+        res = supabase.table("profiles").select("is_verified").eq("email", email).execute()
+        if res.data and res.data[0].get("is_verified"):
+            st.session_state.access_granted = True
+            st.session_state.user_email = email
+            return True
+    except Exception as e:
+        st.error(f"Datenbankfehler: {e}")
+    return False
+
 def render_auth_interface():
+    """Vereinfachtes Terminal Login"""
     # Auth Logo Zentriert
     with open("assets/logo_horizontal.jpg", "rb") as f:
         img_data = f.read()
@@ -446,58 +467,19 @@ def render_auth_interface():
         """,
         unsafe_allow_html=True
     )
-    st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
     
-    auth_tab1, auth_tab2 = st.tabs(["REGISTRIERUNG", "LOGIN"])
+    st.title("TERMINAL LOGIN")
+    st.markdown("---")
     
-    with auth_tab1:
-        st.markdown("### ZUGANG ANFORDERN")
-        new_email = st.text_input("E-Mail für Warteliste", key="reg_email")
-        if st.button("ZUGANG ANFORDERN", key="reg_btn"):
-            if new_email:
-                supabase = init_supabase()
-                if supabase:
-                    try:
-                        existing = supabase.table("waitlist").select("email, is_confirmed").eq("email", new_email).execute()
-                        if existing.data and len(existing.data) > 0:
-                            is_conf = existing.data[0].get("is_confirmed", False)
-                            if is_conf:
-                                st.info("Du bist bereits verifiziert! Nutze den LOGIN Tab.")
-                            else:
-                                st.warning("Du bist bereits auf der Warteliste, aber noch nicht bestätigt.")
-                                if st.button("BESTÄTIGUNGS-LINK ERNEUT SENDEN"):
-                                    if send_verification_email(new_email):
-                                        st.success(f"Link erneut an {new_email} gesendet.")
-                        else:
-                            supabase.table("waitlist").insert({"email": new_email, "is_confirmed": False}).execute()
-                            if send_verification_email(new_email):
-                                st.success(f"Bestätigungs-Link an {new_email} gesendet. Bitte prüfe dein Postfach.")
-                    except Exception as e:
-                        st.error(f"Fehler: {e}")
-                else:
-                    st.error("Datenbank nicht erreichbar.")
-            else:
-                st.error("Bitte E-Mail eingeben.")
-
-    with auth_tab2:
-        st.markdown("### TERMINAL LOGIN")
-        login_email = st.text_input("Registrierte E-Mail", placeholder="name@domain.com", key="login_email_input")
-        if st.button("BOOT SYSTEM", key="login_btn"):
-            if login_email:
-                supabase = init_supabase()
-                if supabase:
-                    try:
-                        check = supabase.table("waitlist").select("is_confirmed").eq("email", login_email).execute()
-                        if check.data and len(check.data) > 0 and check.data[0]['is_confirmed']:
-                            st.session_state.authenticated = True
-                            st.session_state.user_email = login_email
-                            st.success("System Boot Sequence Initialized.")
-                            st.rerun()
-                        else:
-                            st.error("Zugriff verweigert. E-Mail nicht bestätigt oder nicht registriert.")
-                    except Exception as e:
-                        st.error(f"Datenbank-Fehler: {e}")
-                else:
+    email_input = st.text_input("Registrierte E-Mail", key="login_email_terminal", placeholder="name@domain.com")
+    
+    if st.button("LOGIN", key="login_btn_terminal", use_container_width=True):
+        if check_access(email_input):
+            st.success("✅ Zugriff gewährt. System wird initialisiert...")
+            time.sleep(0.5)
+            st.rerun()
+        else:
+            st.error("❌ Zugriff verweigert. E-Mail nicht bestätigt oder nicht registriert.")
                     st.error("Supabase-Verbindung fehlgeschlagen.")
             else:
                 st.warning("Bitte E-Mail eingeben.")
