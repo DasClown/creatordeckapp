@@ -2,15 +2,40 @@
 -- Datum: 2026-01-07
 -- Beschreibung: Fügt Tabellen für Umsatz-Tracking und Medien-Performance hinzu
 
--- 1. PROFILES TABELLE REPARIEREN/ERSTELLEN
+-- 1. PROFILES TABELLE ERWEITERN (falls Spalten fehlen)
+-- Erstelle Tabelle falls nicht vorhanden
 CREATE TABLE IF NOT EXISTS profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email TEXT UNIQUE NOT NULL,
-    access_level TEXT DEFAULT 'creator',
-    is_verified BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Füge fehlende Spalten hinzu (falls nicht vorhanden)
+DO $$ 
+BEGIN
+    -- Email Spalte
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='profiles' AND column_name='email') THEN
+        ALTER TABLE profiles ADD COLUMN email TEXT UNIQUE NOT NULL;
+    END IF;
+    
+    -- Access Level Spalte
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='profiles' AND column_name='access_level') THEN
+        ALTER TABLE profiles ADD COLUMN access_level TEXT DEFAULT 'creator';
+    END IF;
+    
+    -- Is Verified Spalte
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='profiles' AND column_name='is_verified') THEN
+        ALTER TABLE profiles ADD COLUMN is_verified BOOLEAN DEFAULT FALSE;
+    END IF;
+    
+    -- Updated At Spalte
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='profiles' AND column_name='updated_at') THEN
+        ALTER TABLE profiles ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+    END IF;
+END $$;
 
 -- Index für schnelle Email-Lookups
 CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email);
