@@ -33,7 +33,7 @@ try:
     import resend
     
     # Module importieren
-    from modules import crm, finance, planner, factory, gallery, channels, deals, demo
+    from modules import crm, finance, planner, factory, gallery, channels, deals, demo, revenue_vault, onlyfans_analytics
     
     # Global Clients
     supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
