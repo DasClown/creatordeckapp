@@ -298,6 +298,109 @@ def run_instagram_sync(profile_url, supabase):
         st.error(f"CORE CONNECTION LOST: {e}")
     return False
 
+def execute_multi_sync(platform, identifier):
+    """
+    Generische Multi-Platform-Sync-Funktion für TikTok, OnlyFans, etc.
+    
+    Args:
+        platform: Plattform-Name (tiktok, onlyfans)
+        identifier: Username/Handle
+    
+    Returns:
+        True bei Erfolg, False bei Fehler
+    """
+    # API Endpunkte definieren
+    endpoints = {
+        "tiktok": {
+            "url": "https://tiktok-all-in-one.p.rapidapi.com/user/info",
+            "host": "tiktok-all-in-one.p.rapidapi.com"
+        },
+        "onlyfans": {
+            "url": "https://onlyfans-data.p.rapidapi.com/user",
+            "host": "onlyfans-data.p.rapidapi.com"
+        }
+    }
+    
+    config = endpoints.get(platform)
+    if not config:
+        st.error(f"Platform '{platform}' nicht unterstützt. Verfügbar: {list(endpoints.keys())}")
+        return False
+    
+    headers = {
+        "x-rapidapi-key": st.secrets.get("RAPIDAPI_KEY"),
+        "x-rapidapi-host": config["host"]
+    }
+
+    try:
+        with st.spinner(f"PENETRATING {platform.upper()} CORE..."):
+            res = requests.get(config["url"], headers=headers, params={"username": identifier}, timeout=15)
+            
+            if res.status_code == 200:
+                raw = res.json().get("data", {})
+                
+                # Dynamisches Mapping für verschiedene API-Strukturen
+                payload = {
+                    "user_id": st.session_state.get('user_email', 'unknown'),
+                    "platform": platform,
+                    "handle": identifier,
+                    "followers": raw.get("follower_count") or raw.get("subscribers_count") or 0,
+                    "total_likes": raw.get("heart_count") or raw.get("likes_count") or 0,
+                    "video_views": raw.get("video_views_count") or 0,
+                    "engagement_rate": raw.get("engagement_rate"),
+                    "quality_score": raw.get("quality_score")
+                }
+                
+                # In Supabase speichern
+                supabase = init_supabase()
+                supabase.table("stats_history").insert(payload).execute()
+                
+                st.success(f"{platform.upper()} SYNC SUCCESSFUL")
+                
+                # Email-Benachrichtigung
+                user_email = st.session_state.get('user_email', 'unknown')
+                subject = f"Engine Report: {platform.upper()} @{identifier} ist online"
+                body = f"""
+                <html>
+                    <body style="font-family: 'Inter', sans-serif; color: #000; max-width: 600px; margin: 0 auto;">
+                        <div style="border: 2px solid #000; padding: 30px;">
+                            <h1 style="letter-spacing: -2px; font-weight: 800; margin-top: 0;">CONTENT CORE / {platform.upper()} UPDATE</h1>
+                            <p style="font-size: 16px; line-height: 1.6;">
+                                Der Core-Sync für <strong>@{identifier}</strong> auf {platform.upper()} wurde erfolgreich abgeschlossen.
+                            </p>
+                            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 12px 0;"><strong>Follower:</strong></td>
+                                    <td style="padding: 12px 0; text-align: right;">{payload['followers']:,}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 12px 0;"><strong>Total Likes:</strong></td>
+                                    <td style="padding: 12px 0; text-align: right;">{payload['total_likes']:,}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 12px 0;"><strong>Video Views:</strong></td>
+                                    <td style="padding: 12px 0; text-align: right;">{payload['video_views']:,}</td>
+                                </tr>
+                            </table>
+                            <p style="margin-top: 30px;">
+                                <a href="https://content-core.com" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; display: inline-block; font-weight: 600;">
+                                    ZUM DASHBOARD
+                                </a>
+                            </p>
+                        </div>
+                    </body>
+                </html>
+                """
+                send_system_mail(user_email, subject, body, email_type="sync_notification")
+                
+                return True
+            else:
+                st.error(f"{platform.upper()} API REJECTED: {res.status_code}")
+                return False
+                
+    except Exception as e:
+        st.error(f"{platform.upper()} ENGINE ERROR: {e}")
+        return False
+
 def render_instagram_sync(supabase, context="default"):
     """UI Komponente für den Instagram Core Sync (In Sidebar oder Landing)"""
     st.markdown("### SYSTEM CONTROL")
