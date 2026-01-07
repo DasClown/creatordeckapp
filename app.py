@@ -480,9 +480,6 @@ def render_auth_interface():
             st.rerun()
         else:
             st.error("❌ Zugriff verweigert. E-Mail nicht bestätigt oder nicht registriert.")
-                    st.error("Supabase-Verbindung fehlgeschlagen.")
-            else:
-                st.warning("Bitte E-Mail eingeben.")
 
 # --- VIRAL SHARE ---
 def render_viral_share():
