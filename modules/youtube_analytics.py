@@ -12,15 +12,18 @@ from datetime import datetime, timedelta
 # Client-Konfiguration aus den Secrets
 def get_client_config():
     """Erstellt Google OAuth Client Config aus Secrets."""
-    return {
-        "web": {
-            "client_id": st.secrets["GOOGLE_CLIENT_ID"],
-            "client_secret": st.secrets["GOOGLE_CLIENT_SECRET"],
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "redirect_uris": [st.secrets.get("GOOGLE_REDIRECT_URI", "https://content-core.com")]
+    try:
+        return {
+            "web": {
+                "client_id": st.secrets.get("GOOGLE_CLIENT_ID", ""),
+                "client_secret": st.secrets.get("GOOGLE_CLIENT_SECRET", ""),
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [st.secrets.get("GOOGLE_REDIRECT_URI", "https://content-core.com")]
+            }
         }
-    }
+    except Exception:
+        return None
 
 # OAuth Scopes
 SCOPES = [
@@ -121,6 +124,27 @@ def sync_youtube_data(credentials, supabase):
 def render_youtube_analytics(supabase):
     """Rendert YouTube Analytics Dashboard."""
     st.title("📺 YOUTUBE ANALYTICS")
+    
+    # Check if Google OAuth Secrets are configured
+    if not st.secrets.get("GOOGLE_CLIENT_ID") or not st.secrets.get("GOOGLE_CLIENT_SECRET"):
+        st.error("❌ Google OAuth nicht konfiguriert")
+        st.info("""
+        **Setup erforderlich:**
+        
+        Füge folgende Secrets zu `.streamlit/secrets.toml` hinzu:
+        
+        ```toml
+        GOOGLE_CLIENT_ID = "1041446795210-j87qs4vv2pvapbirmg6leose7g362mms.apps.googleusercontent.com"
+        GOOGLE_CLIENT_SECRET = "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"
+        GOOGLE_REDIRECT_URI = "https://content-core.com"
+        ```
+        
+        **Streamlit Cloud:**
+        - App Settings → Secrets
+        - Füge die 3 Zeilen oben ein
+        - Save & Deploy
+        """)
+        return
     
     user_email = st.session_state.get('user_email', 'unknown')
     
