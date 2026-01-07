@@ -949,6 +949,9 @@ def render_dashboard(supabase):
                 col3.metric("CORE SCORE", f"{float(quality):.1f}")
                 col4.metric("REACH INDEX", f"{int(followers * 0.12):,}") # Kalkulierter Wert
 
+                # Global Reach Metrics
+                display_global_metrics()
+
                 # ANALYTICS GRAPH
                 st.markdown("### GROWTH TRAJECTORY")
                 # Verlauf aus den letzten 10 Einträgen
@@ -975,6 +978,52 @@ def render_dashboard(supabase):
                 st.markdown(f"**LOGGED AS:** {user_id} | **STATUS:** CORE ACTIVE")
     except Exception as e:
         st.error(f"ENGINE CRITICAL ERROR: {e}")
+
+def display_global_metrics():
+    """
+    Zeigt plattformübergreifende Reichweiten-Metriken an.
+    
+    Liest aus global_reach_summary View und filtert Adult-Content
+    basierend auf User-Settings.
+    """
+    st.markdown("---")
+    st.subheader("🌐 GLOBAL REACH METRICS")
+    
+    try:
+        user = st.session_state.get("user_email", "unknown")
+        supabase = init_supabase()
+        res = supabase.table("global_reach_summary").select("*").eq("user_id", user).execute()
+        
+        if res.data and len(res.data) > 0:
+            summary = res.data[0]
+            
+            # Haupt-KPI
+            total_followers = summary.get('total_followers', 0)
+            st.metric("TOTAL CROSS-PLATFORM AUDIENCE", f"{int(total_followers):,}")
+            
+            # Platform Breakdown
+            breakdown = summary.get('platform_breakdown', [])
+            if breakdown:
+                # Filter für Adult-Content
+                filtered_breakdown = [
+                    item for item in breakdown
+                    if not (item['platform'].lower() == 'onlyfans' and not st.session_state.adult_content_enabled)
+                ]
+                
+                if filtered_breakdown:
+                    cols = st.columns(len(filtered_breakdown))
+                    
+                    for i, item in enumerate(filtered_breakdown):
+                        p_name = item['platform'].upper()
+                        followers = item.get('followers', 0)
+                        
+                        cols[i].caption(p_name)
+                        cols[i].markdown(f"**{int(followers):,}**")
+        else:
+            st.info("💡 Synchronisiere Daten, um die globale Reichweite zu berechnen.")
+            
+    except Exception as e:
+        st.error(f"ANALYTICS ERROR: {e}")
 
 # --- MAIN ORCHESTRATION ---
 def main():
