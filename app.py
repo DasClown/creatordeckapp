@@ -751,6 +751,11 @@ def main():
     render_head()
     render_styles()
     
+    # Auto-Login für Admin (Entwicklung)
+    if "user_email" not in st.session_state:
+        st.session_state.user_email = "janick@icanhasbucket.de"
+        st.session_state.access_granted = True
+    
     if "access_granted" not in st.session_state:
         st.session_state.access_granted = False
     if "view" not in st.session_state:
