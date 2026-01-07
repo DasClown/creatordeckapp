@@ -287,6 +287,9 @@ def render_revenue_vault(supabase):
         st.markdown("---")
         whale_watcher(supabase)
         
+        # Content Cash-Cow Scoring
+        display_vault_scoring(supabase)
+        
     except Exception as e:
         st.error(f"ANALYTICS ERROR: {e}")
         st.info("💡 Make sure you've run the migration: migrations/004_revenue_vault_schema.sql")
@@ -342,3 +345,97 @@ def whale_watcher(supabase):
             
     except Exception as e:
         st.error(f"Whale Watcher Error: {e}")
+
+def display_vault_scoring(supabase):
+    """
+    Content Cash-Cow Scoring System.
+    
+    Analysiert Top-Performing-Content und gibt strategische Empfehlungen
+    basierend auf Conversion-Rate und Revenue-Effizienz.
+    """
+    st.divider()
+    st.subheader("🔥 CONTENT CASH-COW SCORING")
+    
+    user_email = st.session_state.get('user_email', 'unknown')
+    
+    try:
+        # Top-Performing-Content aus View abrufen
+        res = supabase.table("top_performing_content")\
+            .select("*")\
+            .eq("user_id", user_email)\
+            .limit(10)\
+            .execute()
+        
+        if res.data and len(res.data) > 0:
+            st.info("💡 **Scoring-Logik:** Conversion Rate × 10 (max 100). Höherer Score = bessere Performance.")
+            
+            for item in res.data:
+                # Score berechnen (normiert auf 100)
+                conversion_rate = float(item.get('conversion_rate', 0))
+                score = min(int(conversion_rate * 10), 100)
+                
+                # Rank und Asset-Name
+                rank = int(item.get('efficiency_rank', 0))
+                asset_name = item.get('asset_name', 'Unknown')
+                
+                with st.expander(f"🏆 RANK #{rank} - {asset_name}"):
+                    col1, col2, col3 = st.columns(3)
+                    
+                    # Metriken
+                    col1.metric("Score", f"{score}/100")
+                    col2.metric("Revenue", f"${float(item.get('total_revenue', 0)):,.2f}")
+                    col3.metric("Efficiency", f"${conversion_rate:.2f}/View")
+                    
+                    # Zusätzliche Metriken
+                    st.markdown("---")
+                    col4, col5, col6 = st.columns(3)
+                    col4.metric("PPV Opens", f"{int(item.get('ppv_opens', 0)):,}")
+                    col5.metric("Likes", f"{int(item.get('likes', 0)):,}")
+                    col6.metric("Platform", item.get('platform', 'unknown').upper())
+                    
+                    # Strategische Empfehlungen
+                    st.markdown("---")
+                    st.markdown("**🎯 STRATEGISCHE EMPFEHLUNG:**")
+                    
+                    if score >= 80:
+                        st.success("""
+                        **CASH-COW DETECTED!** 🐄💰
+                        - Sofort als PPV-Wiederholung promoten
+                        - Cross-Platform auf Fansly/OnlyFans teilen
+                        - Ähnlichen Content produzieren
+                        - In Premium-Bundles packen
+                        """)
+                    elif score >= 50:
+                        st.info("""
+                        **SOLID PERFORMER** ✅
+                        - Für Standard-PPV geeignet
+                        - Gelegentlich re-promoten
+                        - Als Filler-Content nutzen
+                        """)
+                    elif score >= 20:
+                        st.warning("""
+                        **UNDERPERFORMER** ⚠️
+                        - Nur als Free-Teaser nutzen
+                        - Nicht mehr für Paid-Promotion
+                        - Analyse: Warum niedrige Performance?
+                        """)
+                    else:
+                        st.error("""
+                        **CONTENT-BURNOUT** 🗑️
+                        - NICHT mehr für Paid-Promotion nutzen
+                        - Eventuell komplett archivieren
+                        - Learnings für zukünftigen Content
+                        """)
+            
+        else:
+            st.info("💡 Noch nicht genügend Daten für das Scoring vorhanden.")
+            st.markdown("""
+            **So sammelst du Daten:**
+            1. Füge Assets in der Vault hinzu
+            2. Logge Revenue und PPV-Opens
+            3. System berechnet automatisch Scores
+            """)
+            
+    except Exception as e:
+        st.error(f"Content Scoring Error: {e}")
+        st.info("💡 Stelle sicher, dass Migration 007 ausgeführt wurde: `migrations/007_content_scoring.sql`")
