@@ -871,7 +871,7 @@ def render_dashboard_layout():
         st.info("ALPHA ACCESS: FREE FOREVER")
         
         # Navigation
-        page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "DEMO"])
+        page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "REVENUE", "DEMO"])
         
         st.markdown("---")
         
@@ -935,6 +935,8 @@ def render_dashboard_layout():
         demo.render_demo()
     elif page == "FACTORY":
         factory.render_factory(supabase)
+    elif page == "REVENUE":
+        revenue_vault.render_revenue_vault(supabase)
 
 def render_dashboard(supabase):
     """Rendert Dashboard mit KPIs, Growth Chart und Instagram Sync."""
