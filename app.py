@@ -2,6 +2,11 @@ import streamlit as st
 import base64
 import time
 
+# --- CONFIGURATION CONSTANTS ---
+LOGO_SIZE_ICON = 120
+LOGO_SIZE_AUTH = 250
+LOGO_SIZE_SIDEBAR = 180
+
 # --- 1. BOOT VERIFICATION (FAIL-SAFE) ---
 # Critical: DB & Auth
 critical_secrets = ["SUPABASE_URL", "SUPABASE_KEY", "RESEND_API_KEY"]
@@ -44,10 +49,8 @@ def init_supabase():
     return supabase
 
 def send_verification_email(email):
-    # WICHTIG: Im Sandbox-Modus darf NUR an deine eigene E-Mail gesendet werden.
-    # WICHTIG: Absender MUSS onboarding@resend.dev sein.
-    
-    verify_url = f"https://www.content-core.com/?verify={email}" # Deine neue Domain
+    """Sendet Verifizierungs-Email via Resend mit verified domain."""
+    verify_url = f"https://www.content-core.com/?verify={email}"
     
     try:
         params = {
@@ -64,8 +67,7 @@ def send_verification_email(email):
             """
         }
         
-        r = resend.Emails.send(params)
-        return r
+        return resend.Emails.send(params)
     except Exception as e:
         # DIAGNOSE für den User:
         masked_key = "NICHT GESETZT"
@@ -147,7 +149,7 @@ st.set_page_config(
 
 # --- SETUP & STYLING ---
 def render_head():
-    """Render SEO and Meta Tags"""
+    """Rendert SEO Meta Tags und Analytics Scripts."""
     st.markdown("""
         <head>
             <title>CONTENT CORE | Advanced Analytics. Zero Cost. High Impact.</title>
@@ -166,7 +168,7 @@ def render_head():
     """, unsafe_allow_html=True)
 
 def render_styles():
-    """Render CONTENT CORE Theme CSS"""
+    """Rendert globales CSS Theme für CONTENT CORE (minimalistisch, schwarz/weiß)."""
     st.markdown("""
     <style>
         /* Google Font: Inter Bold */
@@ -345,22 +347,24 @@ def render_styles():
     </style>
     """, unsafe_allow_html=True)
 
-# --- LANDING PAGE ---
 def render_landing_page():
-    # Zentrales Logo
+    """Rendert Landing Page mit Waitlist-Formular und Admin-Zugang."""
     # Zentrales Logo (mit HTML/CSS zentriert für perfekte Ausrichtung)
-    with open("assets/logo_icon.jpg", "rb") as f:
-        img_data = f.read()
-    img_base64 = base64.b64encode(img_data).decode()
-    
-    st.markdown(
-        f"""
-        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-            <img src="data:image/jpg;base64,{img_base64}" width="120" style="border-radius: 50%;">
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    try:
+        with open("assets/logo_icon.jpg", "rb") as f:
+            img_data = f.read()
+        img_base64 = base64.b64encode(img_data).decode()
+        
+        st.markdown(
+            f"""
+            <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                <img src="data:image/jpg;base64,{img_base64}" width="{LOGO_SIZE_ICON}" style="border-radius: 50%;">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    except FileNotFoundError:
+        st.error("⚠️ Logo-Datei nicht gefunden: assets/logo_icon.jpg")
     
     st.markdown("<h1>CONTENT CORE</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #666;'>SYSTEM INITIALIZATION</p>", unsafe_allow_html=True)
@@ -453,20 +457,23 @@ def check_access(email):
     return False
 
 def render_auth_interface():
-    """Vereinfachtes Terminal Login"""
+    """Vereinfachtes Terminal Login mit Hardcoded Admin-Zugang."""
     # Auth Logo Zentriert
-    with open("assets/logo_horizontal.jpg", "rb") as f:
-        img_data = f.read()
-    img_base64 = base64.b64encode(img_data).decode()
-    
-    st.markdown(
-        f"""
-        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-            <img src="data:image/jpg;base64,{img_base64}" width="250">
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    try:
+        with open("assets/logo_horizontal.jpg", "rb") as f:
+            img_data = f.read()
+        img_base64 = base64.b64encode(img_data).decode()
+        
+        st.markdown(
+            f"""
+            <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                <img src="data:image/jpg;base64,{img_base64}" width="{LOGO_SIZE_AUTH}">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    except FileNotFoundError:
+        st.error("⚠️ Logo-Datei nicht gefunden: assets/logo_horizontal.jpg")
     
     st.title("TERMINAL LOGIN")
     st.markdown("---")
@@ -516,15 +523,15 @@ def render_viral_share():
     if st.button("SKIP & ACTIVATE", key="skip_share"):
         st.session_state.full_access = True
         st.rerun()
-# --- DASHBOARD & NAVIGATION ---
 def render_dashboard_layout():
+    """Rendert Haupt-Dashboard mit Sidebar-Navigation und Modul-Routing."""
     supabase = init_supabase()
     if not supabase:
         st.error("Supabase nicht konfiguriert.")
         return
 
     with st.sidebar:
-        st.image("assets/logo_horizontal.jpg", width=180)
+        st.image("assets/logo_horizontal.jpg", width=LOGO_SIZE_SIDEBAR)
         st.markdown("<div style='margin-top: -20px;'></div>", unsafe_allow_html=True)
         st.info("ALPHA ACCESS: FREE FOREVER")
         
@@ -560,6 +567,7 @@ def render_dashboard_layout():
         factory.render_factory(supabase)
 
 def render_dashboard(supabase):
+    """Rendert Dashboard mit KPIs, Growth Chart und Instagram Sync."""
     st.title("CONTENT CORE / ENGINE")
     user_id = st.session_state.get('user_email', 'unknown')
 
