@@ -7,6 +7,49 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 
+def process_of_csv(uploaded_file, user_email):
+    """
+    Verarbeitet OnlyFans CSV-Export und importiert Revenue-Daten.
+    
+    Args:
+        uploaded_file: Streamlit UploadedFile object
+        user_email: User Email
+    
+    Returns:
+        int: Anzahl importierter Einträge
+    """
+    try:
+        df = pd.read_csv(uploaded_file)
+        
+        # OnlyFans CSV-Struktur Mapping
+        entries = []
+        for _, row in df.iterrows():
+            # Brutto-Berechnung (falls nur Netto vorhanden)
+            amount_net = float(row.get('Amount', 0))
+            fee_percentage = 20.0
+            amount_gross = amount_net / (1 - fee_percentage / 100) if amount_net > 0 else 0
+            
+            entries.append({
+                "user_id": user_email,
+                "platform": "onlyfans",
+                "amount_net": amount_net,
+                "amount_gross": amount_gross,
+                "fee_percentage": fee_percentage,
+                "source": row.get('Type', 'unknown').lower(),
+                "description": row.get('Description', ''),
+                "created_at": row.get('Date')
+            })
+        
+        if entries:
+            from app import init_supabase
+            supabase = init_supabase()
+            supabase.table("revenue_history").insert(entries).execute()
+            return len(entries)
+    except Exception as e:
+        st.error(f"CSV Processing Error: {e}")
+        st.info("💡 Stelle sicher, dass die CSV die Spalten 'Amount', 'Type', 'Date' enthält.")
+    return 0
+
 def render_revenue_vault(supabase):
     """
     Rendert Revenue-Tracking und Vault-Analytics Dashboard.
@@ -58,6 +101,25 @@ def render_revenue_vault(supabase):
                     st.error(f"Error: {e}")
             else:
                 st.warning("Amount must be > 0")
+        
+        st.markdown("---")
+        st.markdown("### 📤 IMPORT CSV")
+        
+        uploaded_file = st.file_uploader(
+            "OnlyFans Revenue CSV",
+            type=['csv'],
+            help="Lade deine OnlyFans Revenue-Export-CSV hoch",
+            key="of_csv_upload"
+        )
+        
+        if uploaded_file is not None:
+            if st.button("IMPORT CSV", use_container_width=True):
+                imported_count = process_of_csv(uploaded_file, user_email)
+                if imported_count > 0:
+                    st.success(f"✅ {imported_count} Einträge importiert!")
+                    st.rerun()
+                else:
+                    st.error("❌ Import fehlgeschlagen")
     
     # Main Dashboard
     try:
