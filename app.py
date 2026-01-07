@@ -355,10 +355,11 @@ def render_landing_page():
             img_data = f.read()
         img_base64 = base64.b64encode(img_data).decode()
         
+        # Logo ist auf Landing Page nicht klickbar (bereits dort)
         st.markdown(
             f"""
             <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-                <img src="data:image/jpg;base64,{img_base64}" width="{LOGO_SIZE_ICON}" style="border-radius: 50%;">
+                <img src="data:image/jpg;base64,{img_base64}" width="{LOGO_SIZE_ICON}" style="border-radius: 50%; cursor: default;">
             </div>
             """,
             unsafe_allow_html=True
@@ -458,11 +459,18 @@ def check_access(email):
 
 def render_auth_interface():
     """Vereinfachtes Terminal Login mit Hardcoded Admin-Zugang."""
-    # Auth Logo Zentriert
+    # Auth Logo Zentriert - Klickbar zurück zur Landing Page
     try:
         with open("assets/logo_horizontal.jpg", "rb") as f:
             img_data = f.read()
         img_base64 = base64.b64encode(img_data).decode()
+        
+        # Klickbares Logo zurück zur Landing
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("← Zurück zur Landing", key="logo_back_to_landing", use_container_width=True):
+                st.session_state.view = "landing"
+                st.rerun()
         
         st.markdown(
             f"""
@@ -531,6 +539,11 @@ def render_dashboard_layout():
         return
 
     with st.sidebar:
+        # Klickbares Logo zum Dashboard
+        if st.button("🏠 Dashboard", key="logo_to_dashboard", use_container_width=True):
+            # Setzt Navigation zurück auf Dashboard
+            st.rerun()
+        
         st.image("assets/logo_horizontal.jpg", width=LOGO_SIZE_SIDEBAR)
         st.markdown("<div style='margin-top: -20px;'></div>", unsafe_allow_html=True)
         st.info("ALPHA ACCESS: FREE FOREVER")
