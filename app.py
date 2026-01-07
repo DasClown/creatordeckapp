@@ -33,7 +33,7 @@ try:
     import resend
     
     # Module importieren
-    from modules import crm, finance, planner, factory, gallery, channels, deals, demo, revenue_vault, onlyfans_analytics
+    from modules import crm, finance, planner, factory, gallery, channels, deals, demo, revenue_vault, onlyfans_analytics, api_connections
     
     # Global Clients
     supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
@@ -442,6 +442,83 @@ def execute_multi_sync(platform, identifier):
                 
     except Exception as e:
         st.error(f"{platform.upper()} ENGINE ERROR: {e}")
+        return False
+
+def sync_fansly_api(user_email):
+    """
+    Synchronisiert Fansly-Account via API-Token.
+    
+    Nutzt gespeicherten API-Token aus api_connections Tabelle.
+    Sicherer als Scraping, erfordert aber Fansly-API-Zugang.
+    
+    Args:
+        user_email: User Email
+    
+    Returns:
+        bool: True bei Erfolg
+    """
+    try:
+        supabase = init_supabase()
+        
+        # Token aus DB abrufen
+        conn = supabase.table("api_connections")\
+            .select("api_token, token_type")\
+            .eq("user_id", user_email)\
+            .eq("platform", "fansly")\
+            .eq("is_active", True)\
+            .execute()
+        
+        if not conn.data or len(conn.data) == 0:
+            st.error("❌ Kein Fansly API-Token gefunden. Bitte in Settings hinterlegen.")
+            return False
+
+        token = conn.data[0]['api_token']
+        token_type = conn.data[0].get('token_type', 'Binding')
+        
+        # Fansly nutzt oft "Binding" statt "Bearer"
+        headers = {"Authorization": f"{token_type} {token}"}
+        
+        with st.spinner("PENETRATING FANSLY API..."):
+            # Account Stats abrufen
+            res = requests.get(
+                "https://api.fansly.com/v1/account/me",
+                headers=headers,
+                timeout=10
+            )
+            
+            if res.status_code == 200:
+                data = res.json().get('response', {})
+                
+                # Follower-Daten extrahieren
+                username = data.get("username", "unknown")
+                followers = data.get("followerCount", 0)
+                
+                # In stats_history speichern
+                stats_payload = {
+                    "user_id": user_email,
+                    "platform": "fansly",
+                    "handle": username,
+                    "followers": followers,
+                    "net_growth": calculate_growth(followers, "fansly", username)
+                }
+                
+                supabase.table("stats_history").insert(stats_payload).execute()
+                
+                # Last Used aktualisieren
+                supabase.table("api_connections")\
+                    .update({"last_used": "now()"})\
+                    .eq("user_id", user_email)\
+                    .eq("platform", "fansly")\
+                    .execute()
+                
+                st.success("FANSLY SYNC SUCCESSFUL")
+                return True
+            else:
+                st.error(f"Fansly API Error: {res.status_code} - {res.text}")
+                return False
+                
+    except Exception as e:
+        st.error(f"Fansly API Error: {e}")
         return False
 
 def render_instagram_sync(supabase, context="default"):
@@ -871,7 +948,7 @@ def render_dashboard_layout():
         st.info("ALPHA ACCESS: FREE FOREVER")
         
         # Navigation
-        page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "REVENUE", "ONLYFANS", "DEMO"])
+        page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "REVENUE", "ONLYFANS", "API", "DEMO"])
         
         st.markdown("---")
         
@@ -939,6 +1016,8 @@ def render_dashboard_layout():
         revenue_vault.render_revenue_vault(supabase)
     elif page == "ONLYFANS":
         onlyfans_analytics.render_onlyfans_analytics(supabase)
+    elif page == "API":
+        api_connections.render_api_connections(supabase)
 
 def render_dashboard(supabase):
     """Rendert Dashboard mit KPIs, Growth Chart und Instagram Sync."""
