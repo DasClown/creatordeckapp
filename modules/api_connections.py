@@ -7,11 +7,80 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 
+def display_connection_manager(supabase):
+    """Quick Connection Manager für Fansly & OnlyFans."""
+    st.header("🔗 QUICK PLATFORM CONNECTIONS")
+    
+    user_email = st.session_state.get('user_email', 'unknown')
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("🔞 Fansly (Auto-Sync)")
+        st.info("Verbinde dein Fansly-Konto für automatische Daten-Synchronisierung.")
+        
+        fansly_token = st.text_input(
+            "Fansly API Token",
+            type="password",
+            key="fs_token",
+            help="Dein Fansly API-Token"
+        )
+        
+        if st.button("CONNECT FANSLY", use_container_width=True):
+            if fansly_token:
+                try:
+                    supabase.table("api_connections").upsert({
+                        "user_id": user_email,
+                        "platform": "fansly",
+                        "api_token": fansly_token,
+                        "token_type": "Binding",
+                        "is_active": True
+                    }, on_conflict="user_id,platform").execute()
+                    st.success("✅ Fansly API verbunden!")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+            else:
+                st.warning("Token erforderlich")
+        
+        if st.button("SYNC FANSLY NOW", use_container_width=True):
+            from app import sync_fansly_api
+            if sync_fansly_api(user_email):
+                st.success("✅ Fansly Daten aktualisiert!")
+                st.rerun()
+            else:
+                st.error("❌ Sync fehlgeschlagen. Prüfe Token.")
+
+    with col2:
+        st.subheader("🔞 OnlyFans (Secure CSV)")
+        st.info("Importiere OnlyFans-Umsätze via CSV-Export (sicher, kein Login erforderlich).")
+        
+        of_file = st.file_uploader(
+            "Upload OF Earnings CSV",
+            type="csv",
+            key="of_csv_quick",
+            help="CSV mit Spalten: Date, Amount, Type"
+        )
+        
+        if of_file:
+            if st.button("IMPORT CSV", use_container_width=True):
+                from modules.revenue_vault import process_of_csv
+                count = process_of_csv(of_file, user_email)
+                if count > 0:
+                    st.success(f"✅ {count} Transaktionen importiert!")
+                    st.rerun()
+                else:
+                    st.error("❌ Import fehlgeschlagen")
+
 def render_api_connections(supabase):
     """Rendert API Connections Manager."""
     st.title("🔑 API CONNECTIONS")
     
     user_email = st.session_state.get('user_email', 'unknown')
+    
+    # Quick Connection Manager
+    display_connection_manager(supabase)
+    
+    st.markdown("---")
     
     st.info("""
     **Sichere Token-Verwaltung**
