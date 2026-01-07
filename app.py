@@ -83,7 +83,22 @@ def send_verification_email(email):
             print(f"Email-Logging fehlgeschlagen: {log_error}")
         
         return result
-        except Exception as e:
+        
+    except Exception as e:
+        # Fehler beim Versand -> Log in Supabase
+        error_msg = str(e)
+        try:
+            supabase = init_supabase()
+            supabase.table("email_logs").insert({
+                "recipient": email,
+                "subject": "System Activated",
+                "status": "failed",
+                "error_message": error_msg,
+                "email_type": "verification"
+            }).execute()
+        except Exception as log_error:
+            print(f"Email-Logging fehlgeschlagen: {log_error}")
+        
         # DIAGNOSE für den User:
         masked_key = "NICHT GESETZT"
         try:
