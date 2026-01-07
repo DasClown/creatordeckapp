@@ -1020,6 +1020,8 @@ def render_dashboard_layout():
         api_connections.render_api_connections(supabase)
     elif page == "YOUTUBE":
         youtube_analytics.render_youtube_analytics(supabase)
+    elif page == "ALERTS":
+        alerts.display_alert_dashboard(supabase)
 
 def render_dashboard(supabase):
     """Rendert Dashboard mit KPIs, Growth Chart und Instagram Sync."""
