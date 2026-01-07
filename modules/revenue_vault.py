@@ -290,6 +290,9 @@ def render_revenue_vault(supabase):
         # Content Cash-Cow Scoring
         display_vault_scoring(supabase)
         
+        # Whale Retention Watch
+        whale_retention_check(supabase)
+        
     except Exception as e:
         st.error(f"ANALYTICS ERROR: {e}")
         st.info("💡 Make sure you've run the migration: migrations/004_revenue_vault_schema.sql")
@@ -439,3 +442,83 @@ def display_vault_scoring(supabase):
     except Exception as e:
         st.error(f"Content Scoring Error: {e}")
         st.info("💡 Stelle sicher, dass Migration 007 ausgeführt wurde: `migrations/007_content_scoring.sql`")
+
+def whale_retention_check(supabase):
+    """
+    Whale Retention Watch - Überwacht Top-Spender-Aktivität.
+    
+    Zeigt die letzten Transaktionen der Top-Spender und warnt bei Inaktivität.
+    Hilft bei proaktiver Retention-Strategie.
+    """
+    st.divider()
+    st.subheader("🐋 WHALE RETENTION WATCH")
+    
+    user_email = st.session_state.get('user_email', 'unknown')
+    
+    try:
+        # Top Spender nach Gesamtumsatz
+        whales = supabase.table("revenue_history")\
+            .select("source, amount_net, created_at, platform")\
+            .eq("user_id", user_email)\
+            .order("amount_net", desc=True)\
+            .limit(10)\
+            .execute()
+        
+        if whales.data and len(whales.data) > 0:
+            df_whales = pd.DataFrame(whales.data)
+            
+            # Datum formatieren
+            df_whales['created_at'] = pd.to_datetime(df_whales['created_at'])
+            df_whales['days_ago'] = (datetime.now() - df_whales['created_at']).dt.days
+            
+            # Formatierung für Display
+            df_display = df_whales.copy()
+            df_display['created_at'] = df_display['created_at'].dt.strftime('%Y-%m-%d %H:%M')
+            df_display['amount_net'] = df_display['amount_net'].apply(lambda x: f"${x:,.2f}")
+            
+            # Inaktivitäts-Warnung
+            inactive_whales = df_whales[df_whales['days_ago'] > 5]
+            
+            if not inactive_whales.empty:
+                st.warning(f"⚠️ **{len(inactive_whales)} Whale(s) inaktiv seit >5 Tagen!**")
+                st.info("💡 **Retention-Strategie:** Sende personalisierte Nachrichten, exklusive Previews oder Special-Offers.")
+            else:
+                st.success("✅ Alle Top-Spender sind aktiv!")
+            
+            # Tabelle
+            st.markdown("**Top 10 Recent Whale Transactions:**")
+            st.dataframe(
+                df_display[['source', 'amount_net', 'platform', 'created_at', 'days_ago']],
+                use_container_width=True,
+                hide_index=True
+            )
+            
+            # Retention-Tipps
+            with st.expander("📚 RETENTION-STRATEGIEN"):
+                st.markdown("""
+                **Für Whales mit >5 Tagen Inaktivität:**
+                
+                1. **Personalisierte DM:**
+                   - "Hey [Name], vermisse dich! Hier ist ein exklusiver Preview..."
+                   - Zeige Wertschätzung für ihre Unterstützung
+                
+                2. **Exklusive Angebote:**
+                   - Special-Discount auf Premium-Content
+                   - Early-Access zu neuem Content
+                   - Custom-Content-Anfragen
+                
+                3. **Re-Engagement-Content:**
+                   - Teaser von neuem Material
+                   - Behind-the-Scenes
+                   - "Miss you" Posts
+                
+                4. **Loyalty-Rewards:**
+                   - VIP-Status
+                   - Bonus-Content
+                   - Shoutouts
+                """)
+        else:
+            st.info("💡 Noch keine Whale-Transaktionen vorhanden.")
+            
+    except Exception as e:
+        st.error(f"Whale Retention Error: {e}")
