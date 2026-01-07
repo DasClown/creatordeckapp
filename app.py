@@ -831,8 +831,20 @@ def render_dashboard_layout():
         page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "DEMO"])
         
         st.markdown("---")
-        # Sync in Sidebar integriert
-        render_instagram_sync(supabase, context="sidebar")
+        
+        # Multi-Platform Sync Control
+        st.markdown("### SYSTEM CONTROL")
+        platform = st.selectbox("PLATFORM", ["instagram", "tiktok", "onlyfans"], key="platform_select")
+        target = st.text_input("TARGET HANDLE / URL", placeholder="username or URL", key="multi_sync_input")
+        
+        if st.button("INITIALIZE SYNC", key="multi_sync_btn", use_container_width=True):
+            if target:
+                if platform == "instagram":
+                    run_instagram_sync(target, supabase)
+                else:
+                    execute_multi_sync(platform, target)
+            else:
+                st.warning("Bitte Handle/URL eingeben.")
         
         st.markdown("---")
         if st.button("LOGOUT"):
