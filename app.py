@@ -835,11 +835,22 @@ def render_dashboard_layout():
         # Multi-Platform Sync Control
         st.markdown("### SYSTEM CONTROL")
         platform = st.selectbox("PLATFORM", ["instagram", "tiktok", "onlyfans"], key="platform_select")
+        
+        # Safety Warning für Adult Content
+        if platform == "onlyfans" and not st.session_state.adult_content_enabled:
+            st.warning("⚠️ OnlyFans enthält Adult Content. Aktiviere den Zugriff in den Einstellungen.")
+            if st.checkbox("Adult Content aktivieren", key="enable_adult_content"):
+                st.session_state.adult_content_enabled = True
+                st.rerun()
+        
         target = st.text_input("TARGET HANDLE / URL", placeholder="username or URL", key="multi_sync_input")
         
         if st.button("INITIALIZE SYNC", key="multi_sync_btn", use_container_width=True):
             if target:
-                if platform == "instagram":
+                # Safety Check für OnlyFans
+                if platform == "onlyfans" and not st.session_state.adult_content_enabled:
+                    st.error("❌ Adult Content muss aktiviert sein für OnlyFans-Sync.")
+                elif platform == "instagram":
                     run_instagram_sync(target, supabase)
                 else:
                     execute_multi_sync(platform, target)
@@ -969,6 +980,8 @@ def main():
         st.session_state.view = "landing"
     if "full_access" not in st.session_state:
         st.session_state.full_access = False
+    if "adult_content_enabled" not in st.session_state:
+        st.session_state.adult_content_enabled = False
 
     # URL Verification Handler
     if "verify" in st.query_params:
