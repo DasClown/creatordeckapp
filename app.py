@@ -33,7 +33,7 @@ try:
     import resend
     
     # Module importieren
-    from modules import crm, finance, planner, factory, gallery, channels, deals, demo, revenue_vault, onlyfans_analytics, api_connections, youtube_analytics
+    from modules import crm, finance, planner, factory, gallery, channels, deals, demo, revenue_vault, onlyfans_analytics, api_connections, youtube_analytics, alerts
     
     # Global Clients
     supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
@@ -948,7 +948,7 @@ def render_dashboard_layout():
         st.info("ALPHA ACCESS: FREE FOREVER")
         
         # Navigation
-        page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "REVENUE", "ONLYFANS", "YOUTUBE", "API", "DEMO"])
+        page = st.radio("NAVIGATION", ["DASHBOARD", "CHANNELS", "FACTORY", "GALLERY", "CRM", "DEALS", "FINANCE", "PLANNER", "REVENUE", "ONLYFANS", "YOUTUBE", "API", "ALERTS", "DEMO"])
         
         st.markdown("---")
         
