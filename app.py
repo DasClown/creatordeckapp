@@ -49,7 +49,7 @@ def init_supabase():
     return supabase
 
 def send_verification_email(email):
-    """Sendet Verifizierungs-Email via Resend mit verified domain."""
+    """Sendet Verifizierungs-Email via Resend mit verified domain und loggt den Versand."""
     verify_url = f"https://www.content-core.com/?verify={email}"
     
     try:
@@ -67,8 +67,23 @@ def send_verification_email(email):
             """
         }
         
-        return resend.Emails.send(params)
-    except Exception as e:
+        result = resend.Emails.send(params)
+        
+        # Erfolgreicher Versand -> Log in Supabase
+        try:
+            supabase = init_supabase()
+            supabase.table("email_logs").insert({
+                "recipient": email,
+                "subject": "System Activated",
+                "status": "success",
+                "email_type": "verification"
+            }).execute()
+        except Exception as log_error:
+            # Logging-Fehler nicht an User weitergeben
+            print(f"Email-Logging fehlgeschlagen: {log_error}")
+        
+        return result
+        except Exception as e:
         # DIAGNOSE für den User:
         masked_key = "NICHT GESETZT"
         try:
