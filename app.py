@@ -834,15 +834,18 @@ def render_dashboard_layout():
         
         # Multi-Platform Sync Control
         st.markdown("### SYSTEM CONTROL")
-        platform = st.selectbox("PLATFORM", ["instagram", "tiktok", "onlyfans"], key="platform_select")
+        
+        # Dynamische Platform-Liste basierend auf Settings
+        available_platforms = ["instagram", "tiktok"]
+        if st.session_state.adult_content_enabled:
+            available_platforms.append("onlyfans")
+        
+        platform = st.selectbox("PLATFORM", available_platforms, key="platform_select")
         target = st.text_input("TARGET HANDLE / URL", placeholder="username or URL", key="multi_sync_input")
         
         if st.button("INITIALIZE SYNC", key="multi_sync_btn", use_container_width=True):
             if target:
-                # Safety Check für OnlyFans
-                if platform == "onlyfans" and not st.session_state.adult_content_enabled:
-                    st.error("❌ Adult Content muss in den System Settings aktiviert sein.")
-                elif platform == "instagram":
+                if platform == "instagram":
                     run_instagram_sync(target, supabase)
                 else:
                     execute_multi_sync(platform, target)
