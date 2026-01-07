@@ -167,6 +167,54 @@ def send_verification_email(email):
         st.markdown(f"[Manuelle Verifizierung (Notfall)]({verify_url})")
         return None
 
+def get_daily_stats():
+    """
+    Generiert täglichen System-Health-Report und sendet ihn per Email.
+    
+    Zählt alle Instagram-Syncs der letzten 24h und sendet einen
+    Statusbericht an den Admin.
+    
+    Returns:
+        dict: Stats-Dictionary mit sync_count
+    """
+    try:
+        supabase = init_supabase()
+        
+        # Zählt die heutigen Syncs in Supabase
+        res = supabase.table("stats_history")\
+            .select("id")\
+            .gte("created_at", "now() - interval '24 hours'")\
+            .execute()
+        
+        sync_count = len(res.data) if res.data else 0
+        
+        # Mail an Admin
+        subject = f"CORE HEALTH: {sync_count} Syncs in 24h"
+        body = f"""
+        <html>
+            <body style="font-family: 'Inter', sans-serif; color: #000; max-width: 600px; margin: 0 auto;">
+                <div style="border: 2px solid #000; padding: 30px;">
+                    <h2 style="letter-spacing: -2px; font-weight: 800; margin-top: 0;">Systemstatus: content-core.com</h2>
+                    <p style="font-size: 16px; line-height: 1.6;">
+                        In den letzten 24 Stunden wurden <strong>{sync_count}</strong> Instagram-Profile synchronisiert.
+                    </p>
+                    <hr style="border: 0; border-top: 2px solid #000; margin: 20px 0;">
+                    <p style="font-size: 14px; color: #666;">
+                        Status: <strong style="color: #000;">ENGINE ACTIVE ✓</strong>
+                    </p>
+                </div>
+            </body>
+        </html>
+        """
+        
+        send_system_mail("janick@icanhasbucket.de", subject, body, email_type="health_report")
+        
+        return {"sync_count": sync_count}
+        
+    except Exception as e:
+        print(f"Daily Stats Error: {e}")
+        return {"sync_count": 0, "error": str(e)}
+
 def run_instagram_sync(profile_url, supabase):
     """Refined Instagram sync using the Statistics API with URL input"""
     api_url = "https://instagram-statistics-api.p.rapidapi.com/community"
