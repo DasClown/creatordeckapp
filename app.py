@@ -537,7 +537,7 @@ def render_dashboard_layout():
         
         st.markdown("---")
         if st.button("LOGOUT"):
-            st.session_state.authenticated = False
+            st.session_state.access_granted = False
             st.rerun()
 
     if page == "DASHBOARD":
@@ -646,8 +646,8 @@ def main():
     render_head()
     render_styles()
     
-    if "authenticated" not in st.session_state:
-        st.session_state.authenticated = False
+    if "access_granted" not in st.session_state:
+        st.session_state.access_granted = False
     if "view" not in st.session_state:
         st.session_state.view = "landing"
     if "full_access" not in st.session_state:
@@ -664,7 +664,7 @@ def main():
             except Exception as e: st.error(f"Error: {e}")
 
     # Routing
-    if not st.session_state.authenticated:
+    if not st.session_state.access_granted:
         if st.session_state.view == "landing":
             render_landing_page()
         else:
