@@ -835,27 +835,36 @@ def render_dashboard_layout():
         # Multi-Platform Sync Control
         st.markdown("### SYSTEM CONTROL")
         platform = st.selectbox("PLATFORM", ["instagram", "tiktok", "onlyfans"], key="platform_select")
-        
-        # Safety Warning für Adult Content
-        if platform == "onlyfans" and not st.session_state.adult_content_enabled:
-            st.warning("⚠️ OnlyFans enthält Adult Content. Aktiviere den Zugriff in den Einstellungen.")
-            if st.checkbox("Adult Content aktivieren", key="enable_adult_content"):
-                st.session_state.adult_content_enabled = True
-                st.rerun()
-        
         target = st.text_input("TARGET HANDLE / URL", placeholder="username or URL", key="multi_sync_input")
         
         if st.button("INITIALIZE SYNC", key="multi_sync_btn", use_container_width=True):
             if target:
                 # Safety Check für OnlyFans
                 if platform == "onlyfans" and not st.session_state.adult_content_enabled:
-                    st.error("❌ Adult Content muss aktiviert sein für OnlyFans-Sync.")
+                    st.error("❌ Adult Content muss in den System Settings aktiviert sein.")
                 elif platform == "instagram":
                     run_instagram_sync(target, supabase)
                 else:
                     execute_multi_sync(platform, target)
             else:
                 st.warning("Bitte Handle/URL eingeben.")
+        
+        st.markdown("---")
+        
+        # System Settings
+        st.markdown("### ⚙️ SYSTEM SETTINGS")
+        
+        # Adult Content Toggle
+        enable_adult = st.toggle(
+            "ADULT CONTENT ENGINE", 
+            value=st.session_state.adult_content_enabled,
+            help="Aktiviert OnlyFans, Fansly und andere Adult-Plattformen.",
+            key="adult_content_toggle"
+        )
+        
+        if enable_adult != st.session_state.adult_content_enabled:
+            st.session_state.adult_content_enabled = enable_adult
+            st.rerun()
         
         st.markdown("---")
         if st.button("LOGOUT"):
