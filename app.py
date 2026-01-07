@@ -1080,6 +1080,9 @@ def render_dashboard(supabase):
                 # Global Reach Metrics
                 display_global_metrics()
 
+                # Cross-Platform Correlation Analytics
+                display_analytics_correlation(supabase)
+
                 # ANALYTICS GRAPH
                 st.markdown("### GROWTH TRAJECTORY")
                 # Verlauf aus den letzten 10 Einträgen
@@ -1152,6 +1155,85 @@ def display_global_metrics():
             
     except Exception as e:
         st.error(f"ANALYTICS ERROR: {e}")
+
+def display_analytics_correlation(supabase):
+    """
+    Zeigt Cross-Platform Korrelations-Analytics.
+    
+    Visualisiert Reichweiten-Wachstum und Revenue-Entwicklung
+    über alle Plattformen hinweg mit Plotly Charts.
+    """
+    import plotly.express as px
+    
+    st.divider()
+    st.subheader("📊 CROSS-PLATFORM CORRELATION")
+    
+    user_email = st.session_state.get('user_email', 'unknown')
+    
+    try:
+        # Daten abrufen
+        reach = supabase.table("stats_history")\
+            .select("created_at, followers, platform, handle")\
+            .eq("user_id", user_email)\
+            .order("created_at")\
+            .execute()
+        
+        rev = supabase.table("revenue_history")\
+            .select("created_at, amount_net, platform")\
+            .eq("user_id", user_email)\
+            .order("created_at")\
+            .execute()
+        
+        if reach.data and len(reach.data) > 0:
+            df_reach = pd.DataFrame(reach.data)
+            df_reach['created_at'] = pd.to_datetime(df_reach['created_at'])
+            
+            # Reichweiten-Wachstum Chart
+            fig_reach = px.line(
+                df_reach,
+                x="created_at",
+                y="followers",
+                color="platform",
+                title="📈 Reichweiten-Wachstum über alle Plattformen",
+                labels={"created_at": "Datum", "followers": "Follower", "platform": "Plattform"}
+            )
+            fig_reach.update_layout(
+                hovermode='x unified',
+                showlegend=True,
+                height=400
+            )
+            st.plotly_chart(fig_reach, use_container_width=True)
+        
+        if rev.data and len(rev.data) > 0:
+            df_rev = pd.DataFrame(rev.data)
+            df_rev['created_at'] = pd.to_datetime(df_rev['created_at'])
+            
+            # Revenue Chart
+            fig_rev = px.bar(
+                df_rev,
+                x="created_at",
+                y="amount_net",
+                color="platform",
+                title="💰 Daily Net Revenue ($)",
+                labels={"created_at": "Datum", "amount_net": "Net Revenue ($)", "platform": "Plattform"}
+            )
+            fig_rev.update_layout(
+                hovermode='x unified',
+                showlegend=True,
+                height=400
+            )
+            st.plotly_chart(fig_rev, use_container_width=True)
+        
+        if (not reach.data or len(reach.data) == 0) and (not rev.data or len(rev.data) == 0):
+            st.info("💡 Sammle mehr Datenpunkte für die Korrelations-Analyse.")
+            st.markdown("""
+            **Tipp:** Synchronisiere Daten von verschiedenen Plattformen:
+            - Instagram, TikTok, YouTube (Reichweite)
+            - OnlyFans, Fansly (Revenue)
+            """)
+            
+    except Exception as e:
+        st.error(f"Correlation Analytics Error: {e}")
 
 # --- MAIN ORCHESTRATION ---
 def main():
