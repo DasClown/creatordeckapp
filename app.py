@@ -199,6 +199,50 @@ def run_instagram_sync(profile_url, supabase):
                 supabase.table("stats_history").insert(stats_payload).execute()
                 
                 st.success("SYNC SUCCESSFUL")
+                
+                # Email-Benachrichtigung senden
+                user_email = st.session_state.get('user_email', 'unknown')
+                screen_name = data.get('screenName', 'Unknown')
+                followers = data.get('usersCount', 0)
+                engagement = data.get('avgER', 0)
+                quality = data.get('qualityScore', 0)
+                
+                subject = f"Engine Report: @{screen_name} ist online"
+                body = f"""
+                <html>
+                    <body style="font-family: 'Inter', sans-serif; color: #000; max-width: 600px; margin: 0 auto;">
+                        <div style="border: 2px solid #000; padding: 30px;">
+                            <h1 style="letter-spacing: -2px; font-weight: 800; margin-top: 0;">CONTENT CORE / SYSTEM UPDATE</h1>
+                            <p style="font-size: 16px; line-height: 1.6;">
+                                Der Core-Sync für <strong>@{screen_name}</strong> wurde erfolgreich abgeschlossen.
+                            </p>
+                            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 12px 0;"><strong>Follower:</strong></td>
+                                    <td style="padding: 12px 0; text-align: right;">{followers:,}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 12px 0;"><strong>Engagement:</strong></td>
+                                    <td style="padding: 12px 0; text-align: right;">{engagement:.2%}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 12px 0;"><strong>Core Score:</strong></td>
+                                    <td style="padding: 12px 0; text-align: right;">{quality:.1f}/100</td>
+                                </tr>
+                            </table>
+                            <p style="margin-top: 30px;">
+                                <a href="https://content-core.com" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; display: inline-block; font-weight: 600;">
+                                    ZUM DASHBOARD
+                                </a>
+                            </p>
+                        </div>
+                    </body>
+                </html>
+                """
+                
+                # Mail senden (silent, kein Error wenn fehlschlägt)
+                send_system_mail(user_email, subject, body, email_type="sync_notification")
+                
                 return True
             else:
                 st.error(f"API REJECTED: {response.status_code}")
