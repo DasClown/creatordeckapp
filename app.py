@@ -215,6 +215,41 @@ def get_daily_stats():
         print(f"Daily Stats Error: {e}")
         return {"sync_count": 0, "error": str(e)}
 
+def calculate_growth(current_followers, platform, handle):
+    """
+    Berechnet den Follower-Zuwachs seit dem letzten Sync.
+    
+    Args:
+        current_followers: Aktuelle Follower-Zahl
+        platform: Plattform-Name
+        handle: Username/Handle
+    
+    Returns:
+        int: Netto-Zuwachs (positiv oder negativ)
+    """
+    try:
+        supabase = init_supabase()
+        
+        # Letzten Wert aus DB holen (vor dem aktuellen Sync)
+        last_entry = supabase.table("stats_history")\
+            .select("followers")\
+            .eq("platform", platform)\
+            .eq("handle", handle)\
+            .order("created_at", desc=True)\
+            .limit(1)\
+            .execute()
+        
+        if last_entry.data and len(last_entry.data) > 0:
+            old_val = last_entry.data[0].get('followers', 0)
+            return current_followers - old_val
+        
+        # Kein vorheriger Eintrag = erster Sync
+        return 0
+        
+    except Exception as e:
+        print(f"Growth Calculation Error: {e}")
+        return 0
+
 def run_instagram_sync(profile_url, supabase):
     """Refined Instagram sync using the Statistics API with URL input"""
     api_url = "https://instagram-statistics-api.p.rapidapi.com/community"
@@ -233,14 +268,18 @@ def run_instagram_sync(profile_url, supabase):
                 data = response.json().get("data", {})
                 
                 # Daten-Payload für Supabase basierend auf API-Struktur
+                followers = data.get("usersCount", 0)
+                handle = data.get("screenName", "unknown")
+                
                 stats_payload = {
                     "user_id": st.session_state.get('user_email', 'unknown'),
                     "platform": "instagram",
-                    "handle": data.get("screenName"),
-                    "followers": data.get("usersCount"),
+                    "handle": handle,
+                    "followers": followers,
                     "engagement_rate": data.get("avgER"),
                     "avg_likes": data.get("avgLikes"),
-                    "quality_score": data.get("qualityScore")
+                    "quality_score": data.get("qualityScore"),
+                    "net_growth": calculate_growth(followers, "instagram", handle)
                 }
                 
                 # Speichern in die Tabelle stats_history
@@ -339,15 +378,19 @@ def execute_multi_sync(platform, identifier):
                 raw = res.json().get("data", {})
                 
                 # Dynamisches Mapping für verschiedene API-Strukturen
+                followers = raw.get("follower_count") or raw.get("subscribers_count") or 0
+                handle = identifier
+                
                 payload = {
                     "user_id": st.session_state.get('user_email', 'unknown'),
                     "platform": platform,
-                    "handle": identifier,
-                    "followers": raw.get("follower_count") or raw.get("subscribers_count") or 0,
+                    "handle": handle,
+                    "followers": followers,
                     "total_likes": raw.get("heart_count") or raw.get("likes_count") or 0,
                     "video_views": raw.get("video_views_count") or 0,
                     "engagement_rate": raw.get("engagement_rate"),
-                    "quality_score": raw.get("quality_score")
+                    "quality_score": raw.get("quality_score"),
+                    "net_growth": calculate_growth(followers, platform, handle)
                 }
                 
                 # In Supabase speichern
