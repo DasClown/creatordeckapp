@@ -197,7 +197,7 @@ def render_gallery(supabase):
                         st.image(url, width=200)
                         st.caption(file_name)
                         
-                        # Buttons in einer Zeile
+                        # Buttons in einer Zeile - dezent
                         col_download, col_delete = st.columns([1, 1])
                         
                         with col_download:
@@ -206,7 +206,8 @@ def render_gallery(supabase):
                         with col_delete:
                             # Eindeutiger Key für jeden Delete-Button
                             delete_key = f"delete_{file_name}_{idx}"
-                            if st.button("🗑️ Löschen", key=delete_key, type="secondary"):
+                            # Kleiner, dezenter Button
+                            if st.button("🗑️", key=delete_key, help="Löschen", use_container_width=False):
                                 try:
                                     # Asset aus Supabase Storage löschen
                                     supabase.storage.from_("assets").remove([f"branded/{file_name}"])
