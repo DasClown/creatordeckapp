@@ -1069,15 +1069,24 @@ def render_dashboard(supabase):
                 # KPI GRID (4 Spalten) - mit None-Checks
                 col1, col2, col3, col4 = st.columns(4)
                 
-                # Sichere Werte mit Fallbacks
-                followers = latest.get('followers') or 0
-                engagement = latest.get('engagement_rate') or 0.0
-                quality = latest.get('quality_score') or 0.0
+                # Sichere Werte mit Fallbacks - Explizite None-Checks
+                followers_raw = latest.get('followers')
+                followers = int(followers_raw) if followers_raw is not None else 0
                 
-                col1.metric("FOLLOWERS", f"{int(followers):,}")
-                col2.metric("ENGAGEMENT", f"{float(engagement):.2%}")
-                col3.metric("CORE SCORE", f"{float(quality):.1f}")
-                col4.metric("REACH INDEX", f"{int(followers * 0.12):,}") # Kalkulierter Wert
+                engagement_raw = latest.get('engagement_rate')
+                engagement = float(engagement_raw) if engagement_raw is not None else 0.0
+                
+                quality_raw = latest.get('quality_score')
+                quality = float(quality_raw) if quality_raw is not None else 0.0
+                
+                # Ensure all values are properly formatted as strings for st.metric()
+                col1.metric("FOLLOWERS", f"{followers:,}")
+                col2.metric("ENGAGEMENT", f"{engagement:.2%}")
+                col3.metric("CORE SCORE", f"{quality:.1f}")
+                
+                # Calculate reach index safely
+                reach_index = int(followers * 0.12) if isinstance(followers, (int, float)) else 0
+                col4.metric("REACH INDEX", f"{reach_index:,}")
 
                 # Global Reach Metrics
                 display_global_metrics()
@@ -1125,38 +1134,86 @@ def display_global_metrics():
     try:
         user = st.session_state.get("user_email", "unknown")
         supabase = init_supabase()
+        
+        if not supabase:
+            st.info("💡 Datenbank nicht verfügbar. Bitte später erneut versuchen.")
+            return
+            
         res = supabase.table("global_reach_summary").select("*").eq("user_id", user).execute()
         
-        if res.data and len(res.data) > 0:
-            summary = res.data[0]
-            
-            # Haupt-KPI
-            total_followers = summary.get('total_followers', 0)
-            st.metric("TOTAL CROSS-PLATFORM AUDIENCE", f"{int(total_followers):,}")
-            
-            # Platform Breakdown
-            breakdown = summary.get('platform_breakdown', [])
-            if breakdown:
-                # Filter für Adult-Content
-                filtered_breakdown = [
-                    item for item in breakdown
-                    if not (item['platform'].lower() == 'onlyfans' and not st.session_state.adult_content_enabled)
-                ]
-                
-                if filtered_breakdown:
-                    cols = st.columns(len(filtered_breakdown))
-                    
-                    for i, item in enumerate(filtered_breakdown):
-                        p_name = item['platform'].upper()
-                        followers = item.get('followers', 0)
-                        
-                        cols[i].caption(p_name)
-                        cols[i].markdown(f"**{int(followers):,}**")
-        else:
+        # Prüfe ob Daten vorhanden sind
+        if not res.data or len(res.data) == 0:
             st.info("💡 Synchronisiere Daten, um die globale Reichweite zu berechnen.")
+            return
+            
+        summary = res.data[0]
+        
+        # Haupt-KPI - Vollständig None-safe mit Fallback
+        total_followers = 0
+        try:
+            total_followers_raw = summary.get('total_followers')
+            if total_followers_raw is not None:
+                total_followers = int(total_followers_raw)
+        except:
+            total_followers = 0
+        
+        st.metric("TOTAL CROSS-PLATFORM AUDIENCE", f"{total_followers:,}")
+        
+        # Platform Breakdown - mit vollständiger Fehlerbehandlung
+        try:
+            breakdown = summary.get('platform_breakdown')
+            
+            if not breakdown or not isinstance(breakdown, list) or len(breakdown) == 0:
+                return
+            
+            # Filter für Adult-Content
+            filtered_breakdown = []
+            for item in breakdown:
+                try:
+                    if not isinstance(item, dict):
+                        continue
+                    platform = str(item.get('platform', ''))
+                    if platform.lower() == 'onlyfans' and not st.session_state.get('adult_content_enabled', False):
+                        continue
+                    filtered_breakdown.append(item)
+                except:
+                    continue
+            
+            if not filtered_breakdown or len(filtered_breakdown) == 0:
+                return
+            
+            # Erstelle Spalten - sicher mit mindestens 1 Spalte
+            num_cols = max(1, min(10, len(filtered_breakdown)))  # Max 10 Spalten
+            cols = st.columns(num_cols)
+            
+            # Zeige Platform Breakdown
+            for i, item in enumerate(filtered_breakdown):
+                try:
+                    if i >= len(cols):
+                        break
+                        
+                    p_name = str(item.get('platform', 'UNKNOWN')).upper()
+                    followers = 0
+                    
+                    try:
+                        followers_raw = item.get('followers')
+                        if followers_raw is not None:
+                            followers = int(followers_raw)
+                    except:
+                        followers = 0
+                    
+                    cols[i].caption(p_name)
+                    cols[i].markdown(f"**{followers:,}**")
+                except:
+                    continue
+                    
+        except Exception as breakdown_error:
+            # Fehler im Breakdown-Bereich - zeige nur Haupt-Metrik
+            st.caption(f"Platform Breakdown temporär nicht verfügbar")
             
     except Exception as e:
-        st.error(f"ANALYTICS ERROR: {e}")
+        # Fallback: Zeige freundliche Nachricht statt Fehler
+        st.info("💡 Globale Reichweiten-Metriken werden berechnet. Bitte synchronisiere mehr Daten.")
 
 def display_analytics_correlation(supabase):
     """
