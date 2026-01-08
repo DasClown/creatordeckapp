@@ -181,8 +181,13 @@ def render_gallery(supabase):
         # Liste der letzten 5 Uploads anzeigen
         try:
             files = supabase.storage.from_("assets").list("branded")
-            if files:
-                for f in files[-5:]:
+            
+            # Filter out placeholder files
+            real_files = [f for f in files if f.get('name') and not f['name'].startswith('.')]
+            
+            if real_files:
+                st.caption(f"📁 {len(real_files)} Assets verfügbar")
+                for f in real_files[-5:]:  # Zeige die letzten 5
                     url = supabase.storage.from_("assets").get_public_url(f"branded/{f['name']}")
                     st.image(url, width=200)
                     st.caption(f['name'])
@@ -190,6 +195,6 @@ def render_gallery(supabase):
                     # Download-Button für Cloud-Assets
                     st.markdown(f"[📥 Download]({url})")
             else:
-                st.info("Noch keine Uploads vorhanden.")
+                st.info("💡 Noch keine Assets hochgeladen. Lade dein erstes Bild hoch!")
         except Exception as e:
-            st.info("Keine Assets gefunden.")
+            st.info("💡 Noch keine Assets vorhanden. Erstelle den 'assets' Bucket in Supabase Storage.")
