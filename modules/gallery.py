@@ -132,6 +132,14 @@ def render_gallery(supabase):
                 mime="image/png"
             )
             
+            # Custom Filename für Cloud Upload
+            st.markdown("#### Cloud Upload")
+            custom_name = st.text_input(
+                "Dateiname (optional)", 
+                placeholder="z.B. summer_promo_2024",
+                help="Leer lassen für automatischen Namen"
+            )
+            
             if st.button("☁️ UPLOAD TO CLOUD"):
                 # Finales Bild speichern
                 buf = io.BytesIO()
@@ -139,7 +147,16 @@ def render_gallery(supabase):
                 buf.seek(0)
                 
                 try:
-                    file_path = f"branded/{uuid.uuid4()}.png"
+                    # Dateiname bestimmen
+                    if custom_name and custom_name.strip():
+                        # Custom Name verwenden (bereinigt)
+                        clean_name = custom_name.strip().replace(" ", "_")
+                        # Entferne ungültige Zeichen
+                        clean_name = "".join(c for c in clean_name if c.isalnum() or c in "_-")
+                        file_path = f"branded/{clean_name}.png"
+                    else:
+                        # UUID verwenden
+                        file_path = f"branded/{uuid.uuid4()}.png"
                     
                     # Upload zu Supabase Storage
                     supabase.storage.from_("assets").upload(file_path, buf.getvalue())
@@ -197,17 +214,18 @@ def render_gallery(supabase):
                         st.image(url, width=200)
                         st.caption(file_name)
                         
-                        # Buttons in einer Zeile - dezent
-                        col_download, col_delete = st.columns([1, 1])
+                        # Buttons in einer Zeile
+                        col_download, col_delete = st.columns([3, 1])
                         
                         with col_download:
-                            st.markdown(f"[📥 Download]({url})")
+                            # Größerer Download-Button
+                            st.link_button("📥 Download", url, use_container_width=True)
                         
                         with col_delete:
                             # Eindeutiger Key für jeden Delete-Button
                             delete_key = f"delete_{file_name}_{idx}"
                             # Kleiner, dezenter Button
-                            if st.button("🗑️", key=delete_key, help="Löschen", use_container_width=False):
+                            if st.button("🗑️", key=delete_key, help="Löschen", use_container_width=True):
                                 try:
                                     # Asset aus Supabase Storage löschen
                                     supabase.storage.from_("assets").remove([f"branded/{file_name}"])
