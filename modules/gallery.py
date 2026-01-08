@@ -187,13 +187,35 @@ def render_gallery(supabase):
             
             if real_files:
                 st.caption(f"📁 {len(real_files)} Assets verfügbar")
-                for f in real_files[-5:]:  # Zeige die letzten 5
-                    url = supabase.storage.from_("assets").get_public_url(f"branded/{f['name']}")
-                    st.image(url, width=200)
-                    st.caption(f['name'])
+                
+                for idx, f in enumerate(real_files[-5:]):  # Zeige die letzten 5
+                    file_name = f['name']
+                    url = supabase.storage.from_("assets").get_public_url(f"branded/{file_name}")
                     
-                    # Download-Button für Cloud-Assets
-                    st.markdown(f"[📥 Download]({url})")
+                    # Container für jedes Asset
+                    with st.container():
+                        st.image(url, width=200)
+                        st.caption(file_name)
+                        
+                        # Buttons in einer Zeile
+                        col_download, col_delete = st.columns([1, 1])
+                        
+                        with col_download:
+                            st.markdown(f"[📥 Download]({url})")
+                        
+                        with col_delete:
+                            # Eindeutiger Key für jeden Delete-Button
+                            delete_key = f"delete_{file_name}_{idx}"
+                            if st.button("🗑️ Löschen", key=delete_key, type="secondary"):
+                                try:
+                                    # Asset aus Supabase Storage löschen
+                                    supabase.storage.from_("assets").remove([f"branded/{file_name}"])
+                                    st.success(f"✅ {file_name} wurde gelöscht!")
+                                    st.rerun()
+                                except Exception as delete_error:
+                                    st.error(f"❌ Fehler beim Löschen: {str(delete_error)}")
+                        
+                        st.divider()
             else:
                 st.info("💡 Noch keine Assets hochgeladen. Lade dein erstes Bild hoch!")
         except Exception as e:
