@@ -67,6 +67,58 @@ def render_revenue_vault(supabase):
     # Sidebar: Quick Log
     with st.sidebar:
         st.markdown("---")
+        st.markdown("### 🔄 AUTO-SYNC REVENUE")
+        
+        # OnlyFans CSV Quick Import
+        st.markdown("#### 📤 OnlyFans CSV")
+        of_csv_file = st.file_uploader(
+            "Upload OF Revenue CSV",
+            type=['csv'],
+            help="Quick import from OnlyFans earnings export",
+            key="of_csv_sidebar"
+        )
+        
+        if of_csv_file is not None:
+            if st.button("IMPORT OF CSV", use_container_width=True):
+                imported_count = process_of_csv(of_csv_file, user_email)
+                if imported_count > 0:
+                    st.success(f"✅ {imported_count} entries imported!")
+                    st.rerun()
+                else:
+                    st.error("❌ Import failed")
+        
+        # Fansly API Sync
+        st.markdown("#### 🔞 Fansly API Sync")
+        
+        # Check if Fansly token exists
+        try:
+            fansly_conn = supabase.table("api_connections")\
+                .select("api_token")\
+                .eq("user_id", user_email)\
+                .eq("platform", "fansly")\
+                .eq("is_active", True)\
+                .execute()
+            
+            has_fansly_token = fansly_conn.data and len(fansly_conn.data) > 0
+            
+            if has_fansly_token:
+                if st.button("🔄 SYNC FANSLY NOW", use_container_width=True):
+                    with st.spinner("Syncing Fansly revenue..."):
+                        # Import sync function from app
+                        from app import sync_fansly_api
+                        if sync_fansly_api(user_email):
+                            st.success("✅ Fansly revenue synced!")
+                            st.rerun()
+                        else:
+                            st.error("❌ Sync failed. Check API token.")
+            else:
+                st.info("💡 Connect Fansly in API Connections")
+                if st.button("GO TO API CONNECTIONS", use_container_width=True):
+                    st.switch_page("pages/api_connections.py")
+        except:
+            st.caption("Fansly sync unavailable")
+        
+        st.markdown("---")
         st.markdown("### 💵 QUICK LOG REVENUE")
         
         # Platform Selection (nur Adult-Plattformen wenn aktiviert)
@@ -101,25 +153,6 @@ def render_revenue_vault(supabase):
                     st.error(f"Error: {e}")
             else:
                 st.warning("Amount must be > 0")
-        
-        st.markdown("---")
-        st.markdown("### 📤 IMPORT CSV")
-        
-        uploaded_file = st.file_uploader(
-            "OnlyFans Revenue CSV",
-            type=['csv'],
-            help="Lade deine OnlyFans Revenue-Export-CSV hoch",
-            key="of_csv_upload"
-        )
-        
-        if uploaded_file is not None:
-            if st.button("IMPORT CSV", use_container_width=True):
-                imported_count = process_of_csv(uploaded_file, user_email)
-                if imported_count > 0:
-                    st.success(f"✅ {imported_count} Einträge importiert!")
-                    st.rerun()
-                else:
-                    st.error("❌ Import fehlgeschlagen")
     
     # Main Dashboard
     try:
