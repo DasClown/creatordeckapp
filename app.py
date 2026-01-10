@@ -9,7 +9,7 @@ LOGO_SIZE_SIDEBAR = 180
 
 # --- 1. BOOT VERIFICATION (FAIL-SAFE) ---
 # Critical: DB & Auth
-critical_secrets = ["SUPABASE_URL", "SUPABASE_KEY", "RESEND_API_KEY"]
+critical_secrets = ["SUPABASE_URL", "SUPABASE_KEY", "SENDGRID_API_KEY"]
 missing_critical = [s for s in critical_secrets if s not in st.secrets]
 
 if missing_critical:
@@ -30,14 +30,14 @@ try:
     import pandas as pd
     import google.genai as genai
     from supabase import create_client
-    import resend
+    from sendgrid import SendGridAPIClient
     
     # Module importieren
     from modules import crm, finance, planner, factory, gallery, channels, deals, demo, revenue_vault, onlyfans_analytics, api_connections, youtube_analytics, alerts
     
     # Global Clients
     supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
-    resend.api_key = st.secrets["RESEND_API_KEY"]
+    # SendGrid wird in alerts.py direkt initialisiert
 except Exception as e:
     st.error(f"BOOT ERROR: {e}")
     st.stop()
