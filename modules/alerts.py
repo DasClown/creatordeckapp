@@ -4,12 +4,11 @@ Automatische Email-Benachrichtigungen für kritische Events
 """
 
 import streamlit as st
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+import requests
 
 def send_performance_alert(alert_type, message, severity="MEDIUM"):
     """
-    Sendet Performance-Alert via SendGrid Email.
+    Sendet Performance-Alert via Brevo (Sendinblue) Email.
     
     Args:
         alert_type: Art des Alerts (z.B. WHALE_INACTIVE)
@@ -20,11 +19,11 @@ def send_performance_alert(alert_type, message, severity="MEDIUM"):
         bool: True bei Erfolg
     """
     try:
-        # SendGrid API Key aus Secrets
-        sendgrid_api_key = st.secrets.get("SENDGRID_API_KEY", "")
+        # Brevo API Key aus Secrets
+        brevo_api_key = st.secrets.get("BREVO_API_KEY", "")
         
-        if not sendgrid_api_key:
-            st.warning("⚠️ SENDGRID_API_KEY nicht konfiguriert. Alerts werden nicht versendet.")
+        if not brevo_api_key:
+            st.warning("⚠️ BREVO_API_KEY nicht konfiguriert. Alerts werden nicht versendet.")
             return False
         
         user_email = st.session_state.get('user_email', 'unknown')
@@ -37,12 +36,28 @@ def send_performance_alert(alert_type, message, severity="MEDIUM"):
         }
         emoji = severity_emoji.get(severity, "📊")
         
-        # Email erstellen
-        message_obj = Mail(
-            from_email='alerts@content-core.com',
-            to_emails=user_email,
-            subject=f"{emoji} PERFORMANCE ALERT: {alert_type.replace('_', ' ')}",
-            html_content=f"""
+        # Brevo API Endpoint
+        url = "https://api.brevo.com/v3/smtp/email"
+        
+        headers = {
+            "accept": "application/json",
+            "api-key": brevo_api_key,
+            "content-type": "application/json"
+        }
+        
+        payload = {
+            "sender": {
+                "name": "Content Core",
+                "email": "alerts@content-core.com"
+            },
+            "to": [
+                {
+                    "email": user_email,
+                    "name": "User"
+                }
+            ],
+            "subject": f"{emoji} PERFORMANCE ALERT: {alert_type.replace('_', ' ')}",
+            "htmlContent": f"""
             <html>
                 <body style="font-family: Arial, sans-serif; padding: 20px;">
                     <h2 style="color: #1f1f1f;">{emoji} System-Meldung</h2>
@@ -62,13 +77,11 @@ def send_performance_alert(alert_type, message, severity="MEDIUM"):
                 </body>
             </html>
             """
-        )
+        }
         
-        # Email senden
-        sg = SendGridAPIClient(sendgrid_api_key)
-        response = sg.send(message_obj)
+        response = requests.post(url, json=payload, headers=headers)
         
-        return response.status_code == 202
+        return response.status_code == 201
         
     except Exception as e:
         st.error(f"Email Error: {e}")
