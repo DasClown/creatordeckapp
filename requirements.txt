@@ -5,7 +5,7 @@ toml==0.10.2
 plotly==6.5.0
 supabase==2.27.0
 google-genai
-resend
+sendgrid
 Pillow==11.0.0
 google-auth-oauthlib==1.2.0
 google-api-python-client==2.111.0

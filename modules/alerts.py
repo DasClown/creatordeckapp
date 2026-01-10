@@ -4,11 +4,12 @@ Automatische Email-Benachrichtigungen für kritische Events
 """
 
 import streamlit as st
-import resend
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 def send_performance_alert(alert_type, message, severity="MEDIUM"):
     """
-    Sendet Performance-Alert via Resend Email.
+    Sendet Performance-Alert via SendGrid Email.
     
     Args:
         alert_type: Art des Alerts (z.B. WHALE_INACTIVE)
@@ -19,11 +20,11 @@ def send_performance_alert(alert_type, message, severity="MEDIUM"):
         bool: True bei Erfolg
     """
     try:
-        # Resend API Key aus Secrets
-        resend.api_key = st.secrets.get("RESEND_API_KEY", "")
+        # SendGrid API Key aus Secrets
+        sendgrid_api_key = st.secrets.get("SENDGRID_API_KEY", "")
         
-        if not resend.api_key:
-            st.warning("⚠️ RESEND_API_KEY nicht konfiguriert. Alerts werden nicht versendet.")
+        if not sendgrid_api_key:
+            st.warning("⚠️ SENDGRID_API_KEY nicht konfiguriert. Alerts werden nicht versendet.")
             return False
         
         user_email = st.session_state.get('user_email', 'unknown')
@@ -36,12 +37,12 @@ def send_performance_alert(alert_type, message, severity="MEDIUM"):
         }
         emoji = severity_emoji.get(severity, "📊")
         
-        # Email-Parameter
-        params = {
-            "from": "Content Core <alerts@content-core.com>",
-            "to": [user_email],
-            "subject": f"{emoji} PERFORMANCE ALERT: {alert_type.replace('_', ' ')}",
-            "html": f"""
+        # Email erstellen
+        message_obj = Mail(
+            from_email='alerts@content-core.com',
+            to_emails=user_email,
+            subject=f"{emoji} PERFORMANCE ALERT: {alert_type.replace('_', ' ')}",
+            html_content=f"""
             <html>
                 <body style="font-family: Arial, sans-serif; padding: 20px;">
                     <h2 style="color: #1f1f1f;">{emoji} System-Meldung</h2>
@@ -51,7 +52,7 @@ def send_performance_alert(alert_type, message, severity="MEDIUM"):
                         <strong>Severity:</strong> {severity}<br>
                         <strong>Alert Type:</strong> {alert_type}
                     </p>
-                    <a href="https://content-core.com" 
+                    <a href="https://content-core.streamlit.app" 
                        style="display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px;">
                         Dashboard prüfen
                     </a>
@@ -60,11 +61,14 @@ def send_performance_alert(alert_type, message, severity="MEDIUM"):
                     </p>
                 </body>
             </html>
-            """,
-        }
+            """
+        )
         
-        resend.Emails.send(params)
-        return True
+        # Email senden
+        sg = SendGridAPIClient(sendgrid_api_key)
+        response = sg.send(message_obj)
+        
+        return response.status_code == 202
         
     except Exception as e:
         st.error(f"Email Error: {e}")
